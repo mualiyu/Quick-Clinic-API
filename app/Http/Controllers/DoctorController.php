@@ -42,7 +42,7 @@ class DoctorController extends Controller
                     'licensenumber' => $request->licensenumber,
                     'contactnumber' => $request->contactnumber,
                     'address' => $request->address,
-                    'language_id' => $request->address,
+                    'language_id' => $request->language_id,
                 ]);
             } else {
                 // Create new doctor profile

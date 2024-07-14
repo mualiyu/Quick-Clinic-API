@@ -41,7 +41,7 @@ class LoginController extends Controller
                 'message' => 'Your Account has been deactivated or deleted, please contact admin at support@quickclinic.com for support. Thank you',
             ], 401);
         }
-        $token = $user->createToken($user->role)->plainTextToken;
+        $token = $user->createToken($user->role, [$user->role])->plainTextToken;
 
         return response()->json([
             'status' => true,

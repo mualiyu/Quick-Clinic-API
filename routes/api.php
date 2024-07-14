@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\LanguageSupportController;
 use App\Http\Controllers\PatientController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,8 +20,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout']);
 });
 
+// Default's (LanguageSupport & )
+Route::get('/languages', [LanguageSupportController::class, 'index']);
+
+
 // Routes for Patients
-Route::middleware(['auth:sanctum', 'can:patient'])->prefix('/patient')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
 
     Route::post('/profile', [PatientController::class, 'storeOrUpdateProfile']);
     Route::get('/profile', [PatientController::class, 'showProfile']);
@@ -28,7 +34,7 @@ Route::middleware(['auth:sanctum', 'can:patient'])->prefix('/patient')->group(fu
 });
 
 // Routes for Doctors
-Route::middleware(['auth:sanctum', 'can:doctor'])->prefix('/doctor')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
 
     Route::post('/profile', [DoctorController::class, 'storeOrUpdateProfile']);
     Route::get('/profile', [DoctorController::class, 'showProfile']);
@@ -37,7 +43,25 @@ Route::middleware(['auth:sanctum', 'can:doctor'])->prefix('/doctor')->group(func
 });
 
 // Routes for Doctors
-Route::middleware(['auth:sanctum', 'can:admin'])->prefix('/admin')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
+
+    Route::prefix('/languages')->group(function () {
+        Route::post('/store', [LanguageSupportController::class, 'addLanguage']);
+        Route::delete('/{languageSupport}/delete', [LanguageSupportController::class, 'deleteLanguage']);
+
+    });
+
+    // Admin Patients section
+    Route::prefix('/patients')->group(function () {
+        Route::get('/list', [AdminController::class, 'get_all_patients']);
+
+    });
+
+    // Admin Doctors Section
+    Route::prefix('/doctors')->group(function () {
+        Route::get('/list', [AdminController::class, 'get_all_doctors']);
+
+    });
 
     // Route::post('/profile', [DoctorController::class, 'storeOrUpdateProfile']);
     // Route::get('/profile', [DoctorController::class, 'showProfile']);
