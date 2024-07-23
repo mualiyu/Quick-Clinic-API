@@ -14,15 +14,30 @@ return new class extends Migration
     {
         Schema::create('doctors', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->unsignedBigInteger('language_id')->nullable();
-            $table->string('firstname');
-            $table->string('lastname');
+            $table->string('first_name');
+            $table->string('last_name')->nullable();
             $table->string('specialization');
-            $table->string('licensenumber');
-            $table->string('contactnumber');
-            $table->string('address');
-            $table->date('registereddate')->default(now());
+            $table->string('license_number');
+            $table->string('phone');
+            $table->string('address')->nullable();
+            $table->string('gender')->nullable();
+
+            $table->string('education_qualifications')->nullable();
+            $table->string('years_of_experience')->nullable();
+            $table->longText('doctor_description')->nullable();
+            $table->integer('basic_pay_amount')->nullable();
+
+            $table->longText('id_card')->nullable();
+            $table->longText('license_document')->nullable();
+            $table->longText('document1')->nullable();
+            $table->longText('document2')->nullable();
+            $table->longText('document3')->nullable();
+            $table->longText('document4')->nullable();
+            $table->longText('document5')->nullable();
+
+            $table->date('registered_date')->default(now());
             $table->timestamps();
         });
     }

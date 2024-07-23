@@ -16,13 +16,25 @@ class DoctorController extends Controller
 
             // Validate incoming request data
             $validator = Validator::make($request->all(), [
-                'firstname' => 'required|string',
-                'lastname' => 'required|string',
+                'language_id' => 'nullable|string',
+                'first_name' => 'required|string',
+                'last_name' => 'nullable|string',
                 'specialization' => 'required|string',
-                'licensenumber' => 'required|string',
-                'contactnumber' => 'nullable|string',
-                'address' => 'nullable|string|max:255',
-                'language_id' => 'nullable',
+                'license_number' => 'required|string',
+                'phone' => 'required|string',
+                'address' => 'nullable|string',
+                'gender' => 'nullable|string',
+                'education_qualifications' => 'nullable|string',
+                'years_of_experience' => 'nullable|string',
+                'doctor_description' => 'nullable|string',
+                'basic_pay_amount' => 'nullable|string',
+                'id_card' => 'nullable|string',
+                'license_document' => 'nullable|string',
+                'document1' => 'nullable|string',
+                'document2' => 'nullable|string',
+                'document3' => 'nullable|string',
+                'document4' => 'nullable|string',
+                'document5' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -36,25 +48,49 @@ class DoctorController extends Controller
             if ($user->doctor()->exists()) {
                 // Update existing profile
                 $user->doctor()->update([
-                    'firstname' => $request->firstname,
-                    'lastname' => $request->lastname,
-                    'specialization' => $request->specialization,
-                    'licensenumber' => $request->licensenumber,
-                    'contactnumber' => $request->contactnumber,
-                    'address' => $request->address,
                     'language_id' => $request->language_id,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'specialization' => $request->specialization,
+                    'license_number' => $request->license_number,
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'gender' => $request->gender,
+                    'education_qualifications' => $request->education_qualifications,
+                    'years_of_experience' => $request->years_of_experience,
+                    'doctor_description' => $request->doctor_description,
+                    'basic_pay_amount' => $request->basic_pay_amount,
+                    'id_card' => $request->id_card,
+                    'license_document' => $request->license_document,
+                    'document1' => $request->document1,
+                    'document2' => $request->document2,
+                    'document3' => $request->document3,
+                    'document4' => $request->document4,
+                    'document5' => $request->document5,
                 ]);
             } else {
                 // Create new doctor profile
                 $doctor = new Doctor([
                     'user_id' => $user->id,
                     'language_id' => $request->language_id,
-                    'firstname' => $request->firstname,
-                    'lastname' => $request->lastname,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
                     'specialization' => $request->specialization,
-                    'licensenumber' => $request->licensenumber,
-                    'contactnumber' => $request->contactnumber,
+                    'license_number' => $request->license_number,
+                    'phone' => $request->phone,
                     'address' => $request->address,
+                    'gender' => $request->gender,
+                    'education_qualifications' => $request->education_qualifications,
+                    'years_of_experience' => $request->years_of_experience,
+                    'doctor_description' => $request->doctor_description,
+                    'basic_pay_amount' => $request->basic_pay_amount,
+                    'id_card' => $request->id_card,
+                    'license_document' => $request->license_document,
+                    'document1' => $request->document1,
+                    'document2' => $request->document2,
+                    'document3' => $request->document3,
+                    'document4' => $request->document4,
+                    'document5' => $request->document5,
                 ]);
                 $user->doctor()->save($doctor);
             }
@@ -145,5 +181,42 @@ class DoctorController extends Controller
             ], 404);
         }
 
+    }
+
+    public function fileUpload(Request $request)
+    {
+            $validator = Validator::make($request->all(), [
+                'file' => 'required|max:9000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            if ($request->hasFile("file")) {
+                $fileNameWExt = $request->file("file")->getClientOriginalName();
+                $fileName = pathinfo($fileNameWExt, PATHINFO_FILENAME);
+                $fileExt = $request->file("file")->getClientOriginalExtension();
+                $fileNameToStore = $fileName."_".time().".".$fileExt;
+                $request->file("file")->storeAs("public/doctors", $fileNameToStore);
+
+                $url = url('/storage/doctors/'.$fileNameToStore);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => "File is successfully uploaded.",
+                    'data' => [
+                        'url' => $url,
+                    ],
+                ]);
+            }else{
+                return response()->json([
+                    'status' => false,
+                    'message' => "Error! File upload invalid. Try again."
+                ], 422);
+            }
     }
 }

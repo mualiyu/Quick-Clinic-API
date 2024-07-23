@@ -13,10 +13,19 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Auth Routes
 Route::post('/register', [RegisterController::class, 'register']);
+
+Route::post('/verify_otp', [RegisterController::class, 'verify_otp']);
+
 Route::post('/login', [LoginController::class, 'login']);
 
+Route::post('/forgot-password', [RegisterController::class, 'forgot_password']);
+
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/reset-password', [RegisterController::class, 'password_reset']);
+
     Route::post('/logout', [LoginController::class, 'logout']);
 });
 
@@ -33,6 +42,7 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
     Route::delete('/account', [PatientController::class, 'deleteAccount']);
 });
 
+
 // Routes for Doctors
 Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
 
@@ -40,27 +50,27 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
     Route::get('/profile', [DoctorController::class, 'showProfile']);
     Route::delete('/profile', [DoctorController::class, 'deleteProfile']);
     Route::delete('/account', [DoctorController::class, 'deleteAccount']);
+
+    Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
 });
 
-// Routes for Doctors
-Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
 
+// Routes for Admin
+Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
     Route::prefix('/languages')->group(function () {
         Route::post('/store', [LanguageSupportController::class, 'addLanguage']);
         Route::delete('/{languageSupport}/delete', [LanguageSupportController::class, 'deleteLanguage']);
 
     });
-
+    Route::get('/list/all-users', [AdminController::class, 'get_all_registered_users']);
     // Admin Patients section
     Route::prefix('/patients')->group(function () {
         Route::get('/list', [AdminController::class, 'get_all_patients']);
 
     });
-
     // Admin Doctors Section
     Route::prefix('/doctors')->group(function () {
         Route::get('/list', [AdminController::class, 'get_all_doctors']);
-
     });
 
     // Route::post('/profile', [DoctorController::class, 'storeOrUpdateProfile']);

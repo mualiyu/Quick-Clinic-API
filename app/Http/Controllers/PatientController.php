@@ -15,8 +15,8 @@ class PatientController extends Controller
 
             // Validate incoming request data
             $validator = Validator::make($request->all(), [
-                'firstname' => 'required|string',
-                'lastname' => 'required|string',
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
                 'date_of_birth' => 'nullable',
                 'gender' => 'nullable|string|in:Male,Female,Other',
                 'contact_number' => 'nullable|string|max:20',
@@ -36,8 +36,8 @@ class PatientController extends Controller
             if ($user->patient()->exists()) {
                 // Update existing profile
                 $user->patient()->update([
-                    'firstname' => $request->firstname,
-                    'lastname' => $request->lastname,
+                    'first_name' => $request->firstname,
+                    'last_name' => $request->lastname,
                     'date_of_birth' => $request->date_of_birth,
                     'gender' => $request->gender,
                     'contact_number' => $request->contact_number,
@@ -48,8 +48,8 @@ class PatientController extends Controller
             } else {
                 // Create new patient profile
                 $patient = new Patient([
-                    'firstname' => $request->firstname,
-                    'lastname' => $request->lastname,
+                    'first_name' => $request->firstname,
+                    'last_name' => $request->lastname,
                     'date_of_birth' => $request->date_of_birth,
                     'gender' => $request->gender,
                     'contact_number' => $request->contact_number,

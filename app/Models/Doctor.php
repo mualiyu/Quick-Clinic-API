@@ -19,13 +19,28 @@ class Doctor extends Model
     protected $fillable = [
         'user_id',
         'language_id',
-        'firstname',
-        'lastname',
+        'first_name',
+        'last_name',
         'specialization',
-        'licensenumber',
-        'contactnumber',
+        'license_number',
+        'phone',
         'address',
-        'registereddate',
+        'gender',
+
+        'education_qualifications',
+        'years_of_experience',
+        'doctor_description',
+        'basic_pay_amount',
+
+        'id_card',
+        'license_document',
+        'document1',
+        'document2',
+        'document3',
+        'document4',
+        'document5',
+
+        'registered_date',
     ];
 
     public function user(): BelongsTo

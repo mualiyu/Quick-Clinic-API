@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('role', ['admin', 'doctor', 'patient']);
             $table->boolean('is_active')->default(0);
             $table->string('password');
+            $table->string('otp')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -18,8 +18,7 @@ return new class extends Migration
             $table->date('date_of_visit');
             $table->longText('symptoms');
             $table->longText('diagnosis')->nullable();
-            $table->longText('treatment')->nullable();
-            $table->longText('notes')->nullable();
+            $table->longText('remark')->nullable();
             $table->timestamps();
         });
     }

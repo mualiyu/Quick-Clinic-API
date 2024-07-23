@@ -21,8 +21,7 @@ class HealthRecord extends Model
         'date_of_visit',
         'symptoms',
         'diagnosis',
-        'treatment',
-        'notes',
+        'remark',
     ];
 
     public function patient(): BelongsTo
@@ -30,7 +29,7 @@ class HealthRecord extends Model
         return $this->belongsTo(Patient::class);
     }
 
-    public function doctor(): BelongsTo
+    public function atended_by(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
     }
