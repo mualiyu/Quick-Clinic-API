@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
     // Admin Doctors Section
     Route::prefix('/doctors')->group(function () {
         Route::get('/list', [AdminController::class, 'get_all_doctors']);
+        Route::post('/approve', [AdminController::class, 'approve_doctor']);
     });
 
     // Route::post('/profile', [DoctorController::class, 'storeOrUpdateProfile']);

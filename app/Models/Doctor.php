@@ -41,6 +41,7 @@ class Doctor extends Model
         'document5',
 
         'registered_date',
+        'is_approved',
     ];
 
     public function user(): BelongsTo

@@ -38,6 +38,7 @@ return new class extends Migration
             $table->longText('document5')->nullable();
 
             $table->date('registered_date')->default(now());
+            $table->boolean('is_approved')->default(0);
             $table->timestamps();
         });
     }
