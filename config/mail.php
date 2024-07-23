@@ -16,6 +16,8 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    'verify_peer' => false,
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations
