@@ -55,12 +55,13 @@ class RegisterController extends Controller
                 ],
             ];
 
-            Mail::to($user->email)->send(new RegistrationMail($mailData));
+            // Mail::to($user->email)->send(new RegistrationMail($mailData));
         }
 
         return response()->json([
             'status' => true,
             'data' => $user,
+            'otp' => $otp,
             'message' => 'User registered successfully',
         ], 200);
     }
@@ -145,10 +146,11 @@ class RegisterController extends Controller
                         // "Best regards",
                     ],
                 ];
-                Mail::to($user->email)->send(new RegistrationMail($mailData));
+                // Mail::to($user->email)->send(new RegistrationMail($mailData));
 
                 return response()->json([
                     'status' => true,
+                    'otp' => $otp,
                     'message' => 'Email has been sent to you with futher instructions.',
                 ], 200);
             } else {
