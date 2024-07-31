@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->date('date_of_birth')->nullable();
             $table->enum('gender', ['Male', 'Female', 'Other']);
-            $table->string('contact_number')->nullable();
+            // $table->string('contact_number')->nullable();
             $table->string('address')->nullable();
             $table->text('health_conditions')->nullable();
             $table->date('registered_date')->default(now());

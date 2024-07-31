@@ -19,6 +19,7 @@ class RegisterController extends Controller
             'username' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'phone' => 'required|string|unique:users',
             'role' => 'required|string',
         ]);
 
@@ -36,6 +37,7 @@ class RegisterController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'phone' => $request->phone,
             'is_active' => 0,
             'otp' => $otp,
         ]);

@@ -23,7 +23,7 @@ class Doctor extends Model
         'last_name',
         'specialization',
         'license_number',
-        'phone',
+        // 'phone',
         'address',
         'gender',
 

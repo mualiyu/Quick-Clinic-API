@@ -30,9 +30,14 @@ class LoginController extends Controller
 
         if (!count($user) > 0) {
             $user = User::where('email', '=', $request->username)->get();
+
+            if (!count($user) > 0) {
+                $user = User::where('phone', '=', $request->username)->get();
+            }
         } else {
             $user = User::where('username', '=', $request->username)->get();
         }
+
         $user = $user[0];
 
         if (!$user || !Hash::check($request->password, $user->password)) {

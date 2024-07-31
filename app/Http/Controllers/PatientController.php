@@ -19,7 +19,7 @@ class PatientController extends Controller
                 'last_name' => 'required|string',
                 'date_of_birth' => 'nullable',
                 'gender' => 'nullable|string|in:Male,Female,Other',
-                'contact_number' => 'nullable|string|max:20',
+                // 'contact_number' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:255',
                 'health_conditions' => 'nullable|string',
                 'language_id' => 'nullable|integer',
@@ -36,11 +36,11 @@ class PatientController extends Controller
             if ($user->patient()->exists()) {
                 // Update existing profile
                 $user->patient()->update([
-                    'first_name' => $request->firstname,
-                    'last_name' => $request->lastname,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
                     'date_of_birth' => $request->date_of_birth,
                     'gender' => $request->gender,
-                    'contact_number' => $request->contact_number,
+                    // 'contact_number' => $request->contact_number,
                     'address' => $request->address,
                     'health_conditions' => $request->health_conditions,
                     'language_id' => $request->language_id,
@@ -48,11 +48,11 @@ class PatientController extends Controller
             } else {
                 // Create new patient profile
                 $patient = new Patient([
-                    'first_name' => $request->firstname,
-                    'last_name' => $request->lastname,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
                     'date_of_birth' => $request->date_of_birth,
                     'gender' => $request->gender,
-                    'contact_number' => $request->contact_number,
+                    // 'contact_number' => $request->contact_number,
                     'address' => $request->address,
                     'health_conditions' => $request->health_conditions,
                     'language_id' => $request->language_id,
