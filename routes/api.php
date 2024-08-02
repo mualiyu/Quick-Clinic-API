@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\LanguageSupportController;
 use App\Http\Controllers\PatientController;
@@ -40,6 +41,10 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
     Route::get('/profile', [PatientController::class, 'showProfile']);
     Route::delete('/profile', [PatientController::class, 'deleteProfile']);
     Route::delete('/account', [PatientController::class, 'deleteAccount']);
+
+    // get doctors
+    Route::get('/doctors-list', [PatientController::class, 'get_all_doctors']);
+
 });
 
 
@@ -52,6 +57,15 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
     Route::delete('/account', [DoctorController::class, 'deleteAccount']);
 
     Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
+});
+
+// Conversations routes
+Route::middleware(['auth:sanctum'])->prefix('/conversations')->group(function () {
+    Route::get('/', [ConversationController::class, 'index']);
+    Route::post('/', [ConversationController::class, 'store']);
+    Route::get('/{conversation}', [ConversationController::class, 'show']);
+
+    Route::post('/{conversation}/messages', [ConversationController::class, 'storeMsg']);
 });
 
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Doctor;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -150,4 +151,30 @@ class PatientController extends Controller
             ], 401);
         }
     }
+
+    public function get_all_doctors(Request $request)
+    {
+        if ($request->user()->tokenCan('patient')) {
+
+            $doctors = Doctor::all();
+            if (count($doctors) > 0) {
+                return response()->json([
+                    'status' => true,
+                    'message' => "List of all doctors below",
+                    'data' => $doctors,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => "No Doctor is found!"
+                ], 422);
+            }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => trans('Failed to Authorize Token!')
+            ], 401);
+        }
+    }
+
 }
