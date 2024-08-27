@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('feedback', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->timestamp('feedback_date')->default(now());
             $table->text('comments')->nullable();
             $table->integer('rating');

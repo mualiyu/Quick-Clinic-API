@@ -57,10 +57,17 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
     Route::delete('/account', [DoctorController::class, 'deleteAccount']);
 
     Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
+
 });
 
 // Conversations routes
 Route::middleware(['auth:sanctum'])->prefix('/conversations')->group(function () {
+    // ai patient chat
+    Route::prefix('/ai-patient-interaction')->group(function () {
+        Route::post('/post', [ConversationController::class, 'post_ai_message']);
+        Route::get('/list', [ConversationController::class, 'get_ai_messages']);
+    });
+
     Route::get('/', [ConversationController::class, 'index']);
     Route::post('/', [ConversationController::class, 'store']);
     Route::get('/{conversation}', [ConversationController::class, 'show']);

@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('ai_interactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained()->onDelete('cascade');
+            $table->foreignId('patient_id');
             $table->timestamp('interaction_date')->default(now());
             $table->enum('interaction_type', ['text', 'voice']);
             $table->longText('symptom_description');
