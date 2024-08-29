@@ -57,7 +57,7 @@ class RegisterController extends Controller
                 ],
             ];
 
-            // Mail::to($user->email)->send(new RegistrationMail($mailData));
+            Mail::to($user->email)->send(new RegistrationMail($mailData));
         }
 
         return response()->json([

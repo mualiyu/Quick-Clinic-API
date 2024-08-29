@@ -16,11 +16,11 @@ return new class extends Migration
             $table->foreignId('patient_id');
             $table->foreignId('doctor_id');
             $table->string('appointment_date');
-            $table->time('appointment_time');
+            $table->string('appointment_time');
             $table->enum('status', ['Pending', 'Scheduled', 'Ongoing', 'Completed', 'Cancelled']);
 
             $table->string('description_of_problem')->nullable();
-            $table->string('attachment');
+            $table->string('attachment')->nullable();
             $table->enum('type', ['Voice', 'Video', 'Message']);
             // $table->string('attachment');
             $table->timestamps();

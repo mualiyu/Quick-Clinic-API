@@ -4,8 +4,10 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\DoctorAppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\LanguageSupportController;
+use App\Http\Controllers\PatientAppointmentController;
 use App\Http\Controllers\PatientController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,7 +46,14 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
 
     // get doctors
     Route::get('/doctors-list', [PatientController::class, 'get_all_doctors']);
+    Route::get('/doctors/{doctor}', [PatientController::class, 'get_single_doctors']);
 
+    Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
+        Route::get('/list', [PatientAppointmentController::class, 'get_all_appointments']);
+        Route::get('/single/{appointment}', [PatientAppointmentController::class, 'get_single_appointment']);
+
+        Route::post('/schedule-appointment', [PatientAppointmentController::class, 'schedule_appointment']);
+    });
 });
 
 
@@ -57,6 +66,13 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
     Route::delete('/account', [DoctorController::class, 'deleteAccount']);
 
     Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
+
+    Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
+        Route::get('/list', [DoctorAppointmentController::class, 'get_all_appointments']);
+        Route::get('/single/{appointment}', [DoctorAppointmentController::class, 'get_single_appointment']);
+
+        Route::post('/update-appointment-status', [DoctorAppointmentController::class, 'doctor_update_status']);
+    });
 
 });
 

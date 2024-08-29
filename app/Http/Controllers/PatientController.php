@@ -177,4 +177,28 @@ class PatientController extends Controller
         }
     }
 
+    public function get_single_doctors(Request $request, Doctor $doctor)
+    {
+        if ($request->user()->tokenCan('patient')) {
+
+            if ($doctor) {
+                return response()->json([
+                    'status' => true,
+                    'data' => $doctor,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Doctor is not found!"
+                ], 422);
+            }
+
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Authorize Token!',
+            ], 401);
+        }
+    }
+
 }
