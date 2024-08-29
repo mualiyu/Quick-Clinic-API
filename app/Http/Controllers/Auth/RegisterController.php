@@ -57,7 +57,12 @@ class RegisterController extends Controller
                 ],
             ];
 
-            Mail::to($user->email)->send(new RegistrationMail($mailData));
+            try {
+                Mail::to($user->email)->send(new RegistrationMail($mailData));
+                //code...
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
         }
 
         return response()->json([
@@ -148,7 +153,12 @@ class RegisterController extends Controller
                         // "Best regards",
                     ],
                 ];
-                // Mail::to($user->email)->send(new RegistrationMail($mailData));
+                try {
+                    //code...
+                    Mail::to($user->email)->send(new RegistrationMail($mailData));
+                } catch (\Throwable $th) {
+                    //throw $th;
+                }
 
                 return response()->json([
                     'status' => true,

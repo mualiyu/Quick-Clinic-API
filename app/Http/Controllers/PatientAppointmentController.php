@@ -110,7 +110,12 @@ class PatientAppointmentController extends Controller
                     ],
                 ];
 
-                Mail::to($doctor->user->email)->send(new AppointmentRequest($mailData));
+                try {
+                    //code...
+                    Mail::to($doctor->user->email)->send(new AppointmentRequest($mailData));
+                } catch (\Throwable $th) {
+                    //throw $th;
+                }
 
                 return response()->json([
                     'status' => true,

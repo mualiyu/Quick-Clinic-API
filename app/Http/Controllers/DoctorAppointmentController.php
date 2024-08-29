@@ -101,7 +101,12 @@ class DoctorAppointmentController extends Controller
                             "Quick Clinic Team",
                         ],
                     ];
-                    Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
+                    try {
+                        //code...
+                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
                 }
 
                 if ($request->status == "Cancelled") {
@@ -118,7 +123,12 @@ class DoctorAppointmentController extends Controller
                             "Quick Clinic Team",
                         ],
                     ];
-                    Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
+                    try {
+                        //code...
+                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
                 }
 
                 return response()->json([
