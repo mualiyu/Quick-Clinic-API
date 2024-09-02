@@ -71,7 +71,7 @@ class DoctorAppointmentController extends Controller
 
             $request->validate([
                 'appointment_id' => 'required',
-                'status' => 'required|string', //['Voice', 'Video', 'Message']
+                'status' => 'required|string', //['Pending', 'Scheduled', 'No Response', 'Ongoing', 'Completed', 'Cancelled']
                 'remark' => 'nullable',
             ]);
 
@@ -112,6 +112,28 @@ class DoctorAppointmentController extends Controller
                 if ($request->status == "Cancelled") {
                     $mailData = [
                         'title' => 'Appointment Cancelled',
+                        'body' => [
+                            "Dear ".$appointment->patient->first_name.",",
+                            "We regret to inform you that your appointment with Dr. ".$appointment->doctor->first_name." on ".$appointment->appointment_date." at ".$appointment->appointment_time." has been cancelled.",
+                            "Reason For Cancelation: ".$request->remark." ",
+                            "We apologize for any inconvenience this may cause. Please note that you can reschedule your appointment or choose another doctor by visiting our app.",
+                            "If you have any questions or need assistance with rescheduling, feel free to reach out to our support team at support@quick-clinic.org.",
+                            "Thank you for your understanding.",
+                            "Best regards,",
+                            "Quick Clinic Team",
+                        ],
+                    ];
+                    try {
+                        //code...
+                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
+                    } catch (\Throwable $th) {
+                        //throw $th;
+                    }
+                }
+
+                if ($request->status == "No Response") {
+                    $mailData = [
+                        'title' => 'Appointment Cancelled - No Response',
                         'body' => [
                             "Dear ".$appointment->patient->first_name.",",
                             "We regret to inform you that your appointment with Dr. ".$appointment->doctor->first_name." on ".$appointment->appointment_date." at ".$appointment->appointment_time." has been cancelled.",

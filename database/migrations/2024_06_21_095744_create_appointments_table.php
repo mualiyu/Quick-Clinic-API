@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('doctor_id');
             $table->string('appointment_date');
             $table->string('appointment_time');
-            $table->enum('status', ['Pending', 'Scheduled', 'Ongoing', 'Completed', 'Cancelled']);
+            $table->enum('status', ['Pending', 'Scheduled', 'No Response', 'Ongoing', 'Completed', 'Cancelled']);
 
             $table->string('description_of_problem')->nullable();
             $table->string('attachment')->nullable();
