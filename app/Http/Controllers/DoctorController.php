@@ -245,7 +245,7 @@ class DoctorController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Un Authorised access"
+                'message' => "Unauthorised access"
             ], 422);
         }
     }
@@ -260,7 +260,7 @@ class DoctorController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Un Authorised access"
+                'message' => "Unauthorised access"
             ], 422);
         }
     }
