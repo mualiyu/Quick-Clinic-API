@@ -222,7 +222,7 @@ class DoctorController extends Controller
     {
         if ($request->user()->tokenCan('doctor')) {
             $validator = Validator::make($request->all(), [
-                'is_available' => 'required',
+                'is_available' => 'required|in:0,1',
             ]);
 
             if ($validator->fails()) {
