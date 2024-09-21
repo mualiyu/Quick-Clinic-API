@@ -67,11 +67,15 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
 
     Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
 
+    Route::post('/profile/is_available', [DoctorController::class, 'is_available']);
+    Route::get('/profile/get_availability', [DoctorController::class, 'get_availability']);
+
     Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
         Route::get('/list', [DoctorAppointmentController::class, 'get_all_appointments']);
         Route::get('/single/{appointment}', [DoctorAppointmentController::class, 'get_single_appointment']);
 
         Route::post('/update-appointment-status', [DoctorAppointmentController::class, 'doctor_update_status']);
+
     });
 
 });

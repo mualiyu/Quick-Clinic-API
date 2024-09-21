@@ -42,6 +42,7 @@ class Doctor extends Model
 
         'registered_date',
         'is_approved',
+        'is_available',
     ];
 
     public function user(): BelongsTo

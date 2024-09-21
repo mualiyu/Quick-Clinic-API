@@ -39,6 +39,7 @@ return new class extends Migration
 
             $table->date('registered_date')->default(now());
             $table->boolean('is_approved')->default(0);
+            $table->boolean('is_available')->default(0);
             $table->timestamps();
         });
     }

@@ -99,7 +99,7 @@ class DoctorController extends Controller
                 'data' => $user->doctor, // Return updated doctor profile if needed
                 'message' => 'Doctor profile updated successfully',
             ], 200);
-        }else{
+        } else {
             return response()->json([
                 'status' => false,
                 'message' => trans('Failed to Authorize Token!')
@@ -125,7 +125,7 @@ class DoctorController extends Controller
                 'status' => false,
                 'message' => 'Doctor profile not found'
             ], 404);
-        }else{
+        } else {
             return response()->json([
                 'status' => false,
                 'message' => trans('Failed to Authorize Token!')
@@ -155,7 +155,6 @@ class DoctorController extends Controller
                 'message' => 'Doctor profile not found'
             ], 404);
         }
-
     }
 
     public function deleteAccount(Request $request)
@@ -179,13 +178,51 @@ class DoctorController extends Controller
                 'message' => 'User account not found'
             ], 404);
         }
-
     }
 
     public function fileUpload(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|max:9000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
+
+        if ($request->hasFile("file")) {
+            $fileNameWExt = $request->file("file")->getClientOriginalName();
+            $fileName = pathinfo($fileNameWExt, PATHINFO_FILENAME);
+            $fileExt = $request->file("file")->getClientOriginalExtension();
+            $fileNameToStore = $fileName . "_" . time() . "." . $fileExt;
+            $request->file("file")->storeAs("public/doctors", $fileNameToStore);
+
+            $url = url('/storage/doctors/' . $fileNameToStore);
+
+            return response()->json([
+                'status' => true,
+                'message' => "File is successfully uploaded.",
+                'data' => [
+                    'url' => $url,
+                ],
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Error! File upload invalid. Try again."
+            ], 422);
+        }
+    }
+
+
+    public function is_available(Request $request)
+    {
+        if ($request->user()->tokenCan('doctor')) {
             $validator = Validator::make($request->all(), [
-                'file' => 'required|max:9000',
+                'is_available' => 'required',
             ]);
 
             if ($validator->fails()) {
@@ -195,27 +232,36 @@ class DoctorController extends Controller
                 ], 422);
             }
 
-            if ($request->hasFile("file")) {
-                $fileNameWExt = $request->file("file")->getClientOriginalName();
-                $fileName = pathinfo($fileNameWExt, PATHINFO_FILENAME);
-                $fileExt = $request->file("file")->getClientOriginalExtension();
-                $fileNameToStore = $fileName."_".time().".".$fileExt;
-                $request->file("file")->storeAs("public/doctors", $fileNameToStore);
+            $dd = Doctor::where('id', '=', $request->user()->doctor->id)->update([
+                'is_available' => $request->is_available,
+            ]);
 
-                $url = url('/storage/doctors/'.$fileNameToStore);
-
+            if ($dd) {
                 return response()->json([
                     'status' => true,
-                    'message' => "File is successfully uploaded.",
-                    'data' => [
-                        'url' => $url,
-                    ],
-                ]);
-            }else{
-                return response()->json([
-                    'status' => false,
-                    'message' => "Error! File upload invalid. Try again."
+                    'is_available' => Doctor::where('id', '=', $request->user()->doctor->id)->get()[0]->is_available ? true : false
                 ], 422);
             }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Un Authorised access"
+            ], 422);
+        }
+    }
+
+    public function get_availability(Request $request)
+    {
+        if ($request->user()->tokenCan('doctor')) {
+            return response()->json([
+                'status' => true,
+                'is_available' => $request->user()->doctor->is_available ? true : false
+            ], 422);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Un Authorised access"
+            ], 422);
+        }
     }
 }
