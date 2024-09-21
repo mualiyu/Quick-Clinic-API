@@ -62,7 +62,9 @@ class ConversationController extends Controller
 
     public function show(Conversation $conversation)
     {
-        $messages = $conversation->messages()->get();
+        // $messages = $conversation->messages()->get();
+        $messages = Message::where('conversation_id', '=', $conversation->id)->orderBy("created_at", 'ASC')->get();
+
 
         if (count($messages) > 0) {
             return response()->json([
