@@ -67,7 +67,7 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
 
     Route::post('/profile/upload-file', [DoctorController::class, 'fileUpload']);
 
-    Route::post('/profile/is_available', [DoctorController::class, 'is_available']);
+    Route::post('/profile/update_availability', [DoctorController::class, 'is_available']);
     Route::get('/profile/get_availability', [DoctorController::class, 'get_availability']);
 
     Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
