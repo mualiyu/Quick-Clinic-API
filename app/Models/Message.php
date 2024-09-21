@@ -18,7 +18,7 @@ class Message extends Model
     ];
 
     protected $hidden = [
-        'sender_type',
+        // 'sender_type',
         'conversation_id',
     ];
 
