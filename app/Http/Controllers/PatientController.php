@@ -156,7 +156,7 @@ class PatientController extends Controller
     {
         if ($request->user()->tokenCan('patient')) {
 
-            $doctors = Doctor::all();
+            $doctors = Doctor::where('is_available', '=', true)->get();
             if (count($doctors) > 0) {
                 return response()->json([
                     'status' => true,
