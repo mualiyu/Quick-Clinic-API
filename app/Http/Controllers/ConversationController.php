@@ -12,8 +12,8 @@ class ConversationController extends Controller
     public function index(Request $request)
     {
         $conversations = $request->user()->tokenCan('patient')
-            ? Conversation::where('patient_id', $request->user()->id)->with('doctor')->with('messages')->get()
-            : Conversation::where('doctor_id', $request->user()->id)->with('patient')->with('messages')->get();
+            ? Conversation::where('patient_id', $request->user()->patient->id)->with('doctor')->with('messages')->get()
+            : Conversation::where('doctor_id', $request->user()->doctor->id)->with('patient')->with('messages')->get();
 
         // return response()->json($conversations);
         if (count($conversations) > 0) {
