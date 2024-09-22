@@ -60,10 +60,11 @@ class RegisterController extends Controller
 
             try {
                 PHPMailerService::send($user->email, $mailData);
-                // Mail::to($user->email)->send(new RegistrationMail($mailData));
-
+                // If the email sends successfully, log it
+                \Log::info('Registration email sent successfully to: ' . $user->email);
             } catch (\Throwable $th) {
-                //throw $th;
+                // Log the error for debugging
+                \Log::error('Failed to send registration email: ' . $th->getMessage());
             }
         }
 
@@ -156,10 +157,13 @@ class RegisterController extends Controller
                     ],
                 ];
                 try {
-                        PHPMailerService::send($user->email, $mailData);
+
+                    PHPMailerService::send($user->email, $mailData);
                     // Mail::to($user->email)->send(new RegistrationMail($mailData));
+                    \Log::info('Foget password email sent successfully to: ' . $user->email);
                 } catch (\Throwable $th) {
-                    //throw $th;
+                    // Log the error for debugging
+                    \Log::error('Failed to send forget token to email: ' . $th->getMessage());
                 }
 
                 return response()->json([
