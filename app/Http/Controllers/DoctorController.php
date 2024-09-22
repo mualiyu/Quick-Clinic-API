@@ -183,7 +183,7 @@ class DoctorController extends Controller
     public function fileUpload(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'file' => 'required|max:9000',
+            'file' => 'required|max:20240',
         ]);
 
         if ($validator->fails()) {
