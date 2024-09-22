@@ -58,14 +58,13 @@ class RegisterController extends Controller
                 ],
             ];
 
-            // try {
-
+            try {
                 PHPMailerService::send($user->email, $mailData);
                 // Mail::to($user->email)->send(new RegistrationMail($mailData));
 
-            // } catch (\Throwable $th) {
-            //     //throw $th;
-            // }
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
         }
 
         return response()->json([
@@ -156,12 +155,12 @@ class RegisterController extends Controller
                         // "Best regards",
                     ],
                 ];
-                // try {
+                try {
                         PHPMailerService::send($user->email, $mailData);
                     // Mail::to($user->email)->send(new RegistrationMail($mailData));
-                // } catch (\Throwable $th) {
-                //     //throw $th;
-                // }
+                } catch (\Throwable $th) {
+                    //throw $th;
+                }
 
                 return response()->json([
                     'status' => true,
