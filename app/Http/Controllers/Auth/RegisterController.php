@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Mail\RegistrationMail;
 use App\Models\User;
+use App\Services\PHPMailerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -58,7 +59,9 @@ class RegisterController extends Controller
             ];
 
             try {
-                Mail::to($user->email)->send(new RegistrationMail($mailData));
+
+                PHPMailerService::send($user->email, $mailData);
+                // Mail::to($user->email)->send(new RegistrationMail($mailData));
                 //code...
             } catch (\Throwable $th) {
                 //throw $th;
@@ -155,7 +158,8 @@ class RegisterController extends Controller
                 ];
                 try {
                     //code...
-                    Mail::to($user->email)->send(new RegistrationMail($mailData));
+                        PHPMailerService::send($user->email, $mailData);
+                    // Mail::to($user->email)->send(new RegistrationMail($mailData));
                 } catch (\Throwable $th) {
                     //throw $th;
                 }
