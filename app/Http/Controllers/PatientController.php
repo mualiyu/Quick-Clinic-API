@@ -155,19 +155,19 @@ class PatientController extends Controller
     public function get_all_doctors(Request $request)
     {
         if ($request->user()->tokenCan('patient')) {
+            $doctors = Doctor::all();
 
-            $doctors = Doctor::where('is_available', '=', true)->get();
-            if (count($doctors) > 0) {
+            if ($doctors->isNotEmpty()) {
                 return response()->json([
                     'status' => true,
-                    'message' => "List of all doctors below",
+                    'message' => "List of all doctors",
                     'data' => $doctors,
                 ], 200);
             } else {
                 return response()->json([
                     'status' => false,
-                    'message' => "No Doctor is found!"
-                ], 422);
+                    'message' => "No doctors found!"
+                ], 404);
             }
         } else {
             return response()->json([
