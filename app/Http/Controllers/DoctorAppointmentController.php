@@ -8,6 +8,8 @@ use App\Models\HealthRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use App\Services\MukeeyMailService;
 
 class DoctorAppointmentController extends Controller
 {
@@ -38,23 +40,26 @@ class DoctorAppointmentController extends Controller
     public function get_single_appointment(Request $request, Appointment $appointment)
     {
         if ($request->user()->tokenCan('doctor')) {
-            if ($appointment) {
+            if ($appointment->doctor_id === $request->user()->doctor->id) {
                 $patient = $appointment->patient;
+                $previousAppointments = $appointment->patient->appointments;
+                // $healthRecord = HealthRecord::where('patient_id', '=', $appointment->patient->id)->get();
 
-                $healthRecord = HealthRecord::where('patient_id', '=', $appointment->patient->id)->get();
-
-                $appointment['patient'] = $patient;
-                $appointment['healthRecord'] = $healthRecord;
+                $appointmentData = $appointment->toArray();
+                $appointmentData['patient'] = $patient;
+                $appointmentData['previousAppointments'] = $previousAppointments;
+                $appointmentData['review'] = $appointment->review;
+                // $appointmentData['healthRecord'] = $healthRecord;
 
                 return response()->json([
                     'status' => true,
-                    'data' => $appointment,
+                    'data' => $appointmentData,
                 ], 200);
-            }else {
+            } else {
                 return response()->json([
                     'status' => false,
-                    'message' => 'No Appointment Found.',
-                ], 422);
+                    'message' => 'Unauthorized to view this appointment.',
+                ], 403);
             }
         } else {
             return response()->json([
@@ -101,12 +106,7 @@ class DoctorAppointmentController extends Controller
                             "Quick Clinic Team",
                         ],
                     ];
-                    try {
-                        //code...
-                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                    }
+                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
                 }
 
                 if ($request->status == "Cancelled") {
@@ -123,12 +123,7 @@ class DoctorAppointmentController extends Controller
                             "Quick Clinic Team",
                         ],
                     ];
-                    try {
-                        //code...
-                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                    }
+                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
                 }
 
                 if ($request->status == "No Response") {
@@ -145,12 +140,7 @@ class DoctorAppointmentController extends Controller
                             "Quick Clinic Team",
                         ],
                     ];
-                    try {
-                        //code...
-                        Mail::to($appointment->patient->user->email)->send(new AppointmentRequest($mailData));
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                    }
+                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
                 }
 
                 return response()->json([
@@ -163,6 +153,78 @@ class DoctorAppointmentController extends Controller
                     'status' => false,
                     'message' => 'Failed, please try again.',
                 ], 422);
+            }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Authorize Token!',
+            ], 401);
+        }
+    }
+
+    public function addDoctorRemark(Request $request, Appointment $appointment)
+    {
+        if ($request->user()->tokenCan('doctor')) {
+            $validator = Validator::make($request->all(), [
+                'doctor_remark' => 'required|string',
+                'report' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:2048',
+                'prescription' => 'nullable|file|mimes:jpeg,png,jpg,pdf,doc,docx|max:2048',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            if ($appointment->doctor_id !== $request->user()->doctor->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized to add remark to this appointment.',
+                ], 403);
+            }
+
+            $appointment->update([
+                'doctor_remark' => $request->doctor_remark,
+            ]);
+
+            if ($request->hasFile('report')) {
+                $appointment->addFile('report', $request->file('report'));
+            }
+
+            if ($request->hasFile('prescription')) {
+                $appointment->addFile('prescription', $request->file('prescription'));
+            }
+
+            // Prepare data for email
+            $mailData = [
+                'title' => 'Doctor Remark for Your Appointment',
+                'body' => [
+                    "Dear " . $appointment->patient->first_name . ",",
+                    "Dr. " . $request->user()->doctor->first_name . " " . $request->user()->doctor->last_name . " has added a remark to your appointment on " . $appointment->appointment_date . ".",
+                    "Remark: " . $request->doctor_remark,
+                    $appointment->report_url ? "A medical report has been attached to this email." : "",
+                    $appointment->prescription_url ? "A prescription has been attached to this email." : "",
+                    "If you have any questions, please don't hesitate to contact us.",
+                ],
+            ];
+
+            // Send email to patient
+            $emailSent = MukeeyMailService::send($appointment->patient->user->email, $mailData);
+
+            if ($emailSent) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Doctor remark added and notification sent to patient.',
+                    'data' => $appointment,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Doctor remark added but failed to send notification to patient.',
+                    'data' => $appointment,
+                ], 200);
             }
         } else {
             return response()->json([

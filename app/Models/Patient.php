@@ -23,7 +23,7 @@ class Patient extends Model
         'last_name',
         'date_of_birth',
         'gender',
-        // 'contact_number',
+        'phone',
         'address',
         'health_conditions',
         'registered_date',

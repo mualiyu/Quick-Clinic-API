@@ -65,7 +65,6 @@ class ConversationController extends Controller
         // $messages = $conversation->messages()->get();
         $messages = Message::where('conversation_id', '=', $conversation->id)->orderBy("created_at", 'ASC')->get();
 
-
         if (count($messages) > 0) {
             return response()->json([
                 'status' => true,

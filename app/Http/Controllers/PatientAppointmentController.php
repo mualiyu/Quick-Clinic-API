@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\AppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
+use App\Services\MukeeyMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -13,14 +14,30 @@ class PatientAppointmentController extends Controller
     public function get_all_appointments(Request $request)
     {
         if ($request->user()->tokenCan('patient')) {
-            $appointments = Appointment::where(['patient_id'=>$request->user()->patient->id])->get();
+            $appointments = Appointment::where(['patient_id' => $request->user()->patient->id])
+                ->with(['review', 'doctor'])
+                ->orderBy('appointment_date', 'desc')
+                ->get()
+                ->map(function ($appointment) {
+                    return [
+                        'id' => $appointment->id,
+                        'appointment_date' => $appointment->appointment_date,
+                        'appointment_time' => $appointment->appointment_time,
+                        'status' => $appointment->status,
+                        'doctor_name' => $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name,
+                        'doctor_remark' => $appointment->doctor_remark,
+                        'has_report' => !is_null($appointment->report_url),
+                        'has_prescription' => !is_null($appointment->prescription_url),
+                        'review' => $appointment->review,
+                    ];
+                });
 
-            if (count($appointments)>0) {
+            if ($appointments->isNotEmpty()) {
                 return response()->json([
                     'status' => true,
                     'data' => $appointments,
                 ], 200);
-            }else {
+            } else {
                 return response()->json([
                     'status' => false,
                     'message' => 'No Appointment Found.',
@@ -36,18 +53,47 @@ class PatientAppointmentController extends Controller
 
     public function get_single_appointment(Request $request, Appointment $appointment)
     {
-
         if ($request->user()->tokenCan('patient')) {
-            if ($appointment) {
+            if ($appointment->patient_id === $request->user()->patient->id) {
+                $appointment->load(['review', 'doctor']);
+
+                $previousAppointments = Appointment::where('patient_id', $request->user()->patient->id)
+                    ->where('appointment_date', '<', $appointment->appointment_date)
+                    ->orderBy('appointment_date', 'desc')
+                    ->limit(5)
+                    ->get()
+                    ->map(function ($prevAppointment) {
+                        return [
+                            'id' => $prevAppointment->id,
+                            'appointment_date' => $prevAppointment->appointment_date,
+                            'doctor_name' => $prevAppointment->doctor->first_name . ' ' . $prevAppointment->doctor->last_name,
+                            'doctor_remark' => $prevAppointment->doctor_remark,
+                        ];
+                    });
+
+                $appointmentData = [
+                    'id' => $appointment->id,
+                    'appointment_date' => $appointment->appointment_date,
+                    'appointment_time' => $appointment->appointment_time,
+                    'status' => $appointment->status,
+                    'description_of_problem' => $appointment->description_of_problem,
+                    'doctor_name' => $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name,
+                    'doctor_remark' => $appointment->doctor_remark,
+                    'report_url' => $appointment->report_url,
+                    'prescription_url' => $appointment->prescription_url,
+                    'review' => $appointment->review,
+                    'previous_appointments' => $previousAppointments,
+                ];
+
                 return response()->json([
                     'status' => true,
-                    'data' => $appointment,
+                    'data' => $appointmentData,
                 ], 200);
-            }else {
+            } else {
                 return response()->json([
                     'status' => false,
-                    'message' => 'No Appointment Found.',
-                ], 422);
+                    'message' => 'Unauthorized to view this appointment.',
+                ], 403);
             }
         } else {
             return response()->json([
@@ -110,12 +156,7 @@ class PatientAppointmentController extends Controller
                     ],
                 ];
 
-                try {
-                    //code...
-                    Mail::to($doctor->user->email)->send(new AppointmentRequest($mailData));
-                } catch (\Throwable $th) {
-                    //throw $th;
-                }
+                MukeeyMailService::send($doctor->user->email, $mailData);
 
                 return response()->json([
                     'status' => true,

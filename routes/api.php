@@ -9,6 +9,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\LanguageSupportController;
 use App\Http\Controllers\PatientAppointmentController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,8 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
         Route::get('/single/{appointment}', [PatientAppointmentController::class, 'get_single_appointment']);
 
         Route::post('/schedule-appointment', [PatientAppointmentController::class, 'schedule_appointment']);
+
+        Route::post('/{appointment}/review', [ReviewController::class, 'store']);
     });
 });
 
@@ -70,12 +73,21 @@ Route::middleware(['auth:sanctum'])->prefix('/doctor')->group(function () {
     Route::post('/profile/update_availability', [DoctorController::class, 'is_available']);
     Route::get('/profile/get_availability', [DoctorController::class, 'get_availability']);
 
+    // new (25 sept)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Doctor availability routes
+        Route::get('/profile/availability', [DoctorController::class, 'getAvailability']);
+        Route::post('/profile/availability', [DoctorController::class, 'updateAvailability']);
+        Route::delete('/profile/availability', [DoctorController::class, 'deleteAvailability']);
+    });
+
     Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
         Route::get('/list', [DoctorAppointmentController::class, 'get_all_appointments']);
         Route::get('/single/{appointment}', [DoctorAppointmentController::class, 'get_single_appointment']);
 
         Route::post('/update-appointment-status', [DoctorAppointmentController::class, 'doctor_update_status']);
 
+        Route::post('/{appointment}/doctor-remark', [DoctorAppointmentController::class, 'addDoctorRemark']);
     });
 
 });
@@ -104,6 +116,7 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
 
     });
     Route::get('/list/all-users', [AdminController::class, 'get_all_registered_users']);
+
     // Admin Patients section
     Route::prefix('/patients')->group(function () {
         Route::get('/list', [AdminController::class, 'get_all_patients']);
@@ -120,3 +133,5 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
     // Route::delete('/profile', [DoctorController::class, 'deleteProfile']);
     // Route::delete('/account', [DoctorController::class, 'deleteAccount']);
 });
+
+

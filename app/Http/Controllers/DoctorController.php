@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Doctor;
+use App\Models\DoctorAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -11,7 +12,6 @@ class DoctorController extends Controller
     public function storeOrUpdateProfile(Request $request)
     {
         if ($request->user()->tokenCan('doctor')) {
-
             $user = $request->user(); // Assuming user is authenticated
 
             // Validate incoming request data
@@ -34,6 +34,15 @@ class DoctorController extends Controller
                 'document3' => 'nullable|string',
                 'document4' => 'nullable|string',
                 'document5' => 'nullable|string',
+                'voice_consultation_fee' => 'nullable|numeric|min:0',
+                'video_consultation_fee' => 'nullable|numeric|min:0',
+                'message_consultation_fee' => 'nullable|numeric|min:0',
+                'experiences' => 'nullable',
+                'experiences.*.title' => 'required|string',
+                'experiences.*.institution' => 'required|string',
+                'experiences.*.start_date' => 'required|date',
+                'experiences.*.end_date' => 'nullable|date|after:experiences.*.start_date',
+                'experiences.*.description' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -43,10 +52,15 @@ class DoctorController extends Controller
                 ], 422);
             }
 
+            $experiences = json_decode($request->experiences, true);
+            $request->merge(['experiences' => $experiences]);
+
+            // return $request->all();
+
             // Check if user already has a doctor profile
             if ($user->doctor()->exists()) {
                 // Update existing profile
-                $user->doctor()->update([
+                $doctorData = [
                     'language_id' => $request->language_id,
                     'first_name' => $request->first_name,
                     'last_name' => $request->last_name,
@@ -66,10 +80,15 @@ class DoctorController extends Controller
                     'document3' => $request->document3,
                     'document4' => $request->document4,
                     'document5' => $request->document5,
-                ]);
+                    'voice_consultation_fee' => $request->voice_consultation_fee,
+                    'video_consultation_fee' => $request->video_consultation_fee,
+                    'message_consultation_fee' => $request->message_consultation_fee,
+                    'experiences' => $request->experiences,
+                ];
+                $user->doctor()->update($doctorData);
             } else {
                 // Create new doctor profile
-                $doctor = new Doctor([
+                $doctorData = [
                     'user_id' => $user->id,
                     'language_id' => $request->language_id,
                     'first_name' => $request->first_name,
@@ -90,7 +109,12 @@ class DoctorController extends Controller
                     'document3' => $request->document3,
                     'document4' => $request->document4,
                     'document5' => $request->document5,
-                ]);
+                    'voice_consultation_fee' => $request->voice_consultation_fee,
+                    'video_consultation_fee' => $request->video_consultation_fee,
+                    'message_consultation_fee' => $request->message_consultation_fee,
+                    'experiences' => $request->experiences,
+                ];
+                $doctor = new Doctor($doctorData);
                 $user->doctor()->save($doctor);
             }
 
@@ -217,7 +241,6 @@ class DoctorController extends Controller
         }
     }
 
-
     public function is_available(Request $request)
     {
         if ($request->user()->tokenCan('doctor')) {
@@ -262,6 +285,81 @@ class DoctorController extends Controller
                 'status' => false,
                 'message' => "Unauthorised access"
             ], 422);
+        }
+    }
+
+
+    // Doctor Availability logics and methods
+    public function getAvailability(Request $request)
+    {
+        if ($request->user()->tokenCan('doctor')) {
+            $user = $request->user();
+            $availabilities = $user->doctor->availabilities;
+
+            return response()->json([
+                'status' => true,
+                'data' => $availabilities,
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access'
+            ], 401);
+        }
+    }
+
+    public function updateAvailability(Request $request)
+    {
+        if ($request->user()->tokenCan('doctor')) {
+            $user = $request->user();
+
+            $validator = Validator::make($request->all(), [
+                'availabilities' => 'required|array',
+                'availabilities.*.day_of_week' => 'required|integer|between:0,6',
+                'availabilities.*.start_time' => 'required|date_format:H:i',
+                'availabilities.*.end_time' => 'required|date_format:H:i|after:availabilities.*.start_time',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $user->doctor->availabilities()->delete(); // Remove existing availabilities
+            foreach ($request->availabilities as $availability) {
+                $user->doctor->availabilities()->create($availability);
+            }
+
+            return response()->json([
+                'status' => true,
+                'data' => $user->doctor->availabilities,
+                'message' => 'Availability updated successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access'
+            ], 401);
+        }
+    }
+
+    public function deleteAvailability(Request $request)
+    {
+        if ($request->user()->tokenCan('doctor')) {
+            $user = $request->user();
+            $user->doctor->availabilities()->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'All availabilities deleted successfully',
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access'
+            ], 401);
         }
     }
 }

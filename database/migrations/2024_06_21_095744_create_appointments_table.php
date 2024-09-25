@@ -23,6 +23,10 @@ return new class extends Migration
             $table->string('attachment')->nullable();
             $table->enum('type', ['Voice', 'Video', 'Message']);
             // $table->string('attachment');
+
+            $table->text('doctor_remark')->nullable();
+            $table->string('report_url')->nullable();
+            $table->string('prescription_url')->nullable();
             $table->timestamps();
         });
     }

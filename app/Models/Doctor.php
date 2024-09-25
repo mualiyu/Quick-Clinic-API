@@ -43,6 +43,15 @@ class Doctor extends Model
         'registered_date',
         'is_approved',
         'is_available',
+        // new fields
+        'voice_consultation_fee',
+        'video_consultation_fee',
+        'message_consultation_fee',
+        'experiences',
+    ];
+
+    protected $casts = [
+        'experiences' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -68,5 +77,10 @@ class Doctor extends Model
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);
+    }
+
+    public function availabilities(): HasMany
+    {
+        return $this->hasMany(DoctorAvailability::class);
     }
 }

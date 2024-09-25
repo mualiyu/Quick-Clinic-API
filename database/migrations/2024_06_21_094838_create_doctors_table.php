@@ -40,6 +40,11 @@ return new class extends Migration
             $table->date('registered_date')->default(now());
             $table->boolean('is_approved')->default(0);
             $table->boolean('is_available')->default(0);
+
+            $table->decimal('voice_consultation_fee', 8, 2)->nullable();
+            $table->decimal('video_consultation_fee', 8, 2)->nullable();
+            $table->decimal('message_consultation_fee', 8, 2)->nullable();
+            $table->json('experiences')->nullable();
             $table->timestamps();
         });
     }

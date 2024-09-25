@@ -25,6 +25,10 @@ class Appointment extends Model
         'description_of_problem',
         'attachment',
         'type',
+        // Add these new fields
+        'doctor_remark',
+        'report_url',
+        'prescription_url',
     ];
 
     public function patient(): BelongsTo
@@ -35,5 +39,18 @@ class Appointment extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    // Add this method if you want to handle file uploads
+    public function addFile($type, $file)
+    {
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $filePath = $file->storeAs('appointments', $fileName, 'public/appointments');
+        $this->update([$type . '_url' => '/storage/appointments/' . $filePath]);
     }
 }
