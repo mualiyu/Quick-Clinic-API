@@ -19,14 +19,14 @@ return new class extends Migration
             $table->string('appointment_time');
             $table->enum('status', ['Pending', 'Scheduled', 'No Response', 'Ongoing', 'Completed', 'Cancelled']);
 
-            $table->string('description_of_problem')->nullable();
+            $table->longText('description_of_problem')->nullable();
             $table->string('attachment')->nullable();
             $table->enum('type', ['Voice', 'Video', 'Message']);
             // $table->string('attachment');
 
-            $table->text('doctor_remark')->nullable();
-            $table->string('report_url')->nullable();
-            $table->string('prescription_url')->nullable();
+            $table->longText('doctor_remark')->nullable();
+            $table->longText('report_url')->nullable();
+            $table->longText('prescription_url')->nullable();
             $table->timestamps();
         });
     }

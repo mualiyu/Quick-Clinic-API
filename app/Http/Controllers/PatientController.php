@@ -155,7 +155,7 @@ class PatientController extends Controller
     public function get_all_doctors(Request $request)
     {
         if ($request->user()->tokenCan('patient')) {
-            $doctors = Doctor::all();
+            $doctors = Doctor::with('availabilities')->get();
 
             if ($doctors->isNotEmpty()) {
                 return response()->json([
@@ -181,6 +181,7 @@ class PatientController extends Controller
     {
         if ($request->user()->tokenCan('patient')) {
 
+            $doctor->load('availabilities');
             if ($doctor) {
                 return response()->json([
                     'status' => true,
