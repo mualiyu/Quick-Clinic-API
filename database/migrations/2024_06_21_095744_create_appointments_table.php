@@ -27,6 +27,9 @@ return new class extends Migration
             $table->longText('doctor_remark')->nullable();
             $table->longText('report_url')->nullable();
             $table->longText('prescription_url')->nullable();
+
+            $table->string('payment_reference')->nullable();
+            $table->longText('meeting_link')->nullable();
             $table->timestamps();
         });
     }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DoctorAppointmentController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -36,3 +38,12 @@ Route::get('storage/{p}/{filename}', function ($p, $filename)
 
     return $response;
 });
+
+Route::get('/pay/callback', function (Request $request) {
+    return response()->json([
+        'status' => true,
+        'message' => $request->all(),
+    ], 200);
+})->name("pay.callback");
+
+Route::get("test/google/{appointment}", [DoctorAppointmentController::class, 'test']);

@@ -10,20 +10,27 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Services\MukeeyMailService;
+// use Google\Client;
+// use Google_Client;
+// use Google\Service\Calendar;
+// use Google\Service\Calendar\Event;
+// use Google\Service\YouTube;
+use Spatie\GoogleCalendar\Event;
+use Carbon\Carbon;
 
 class DoctorAppointmentController extends Controller
 {
     public function get_all_appointments(Request $request)
     {
         if ($request->user()->tokenCan('doctor')) {
-            $appointments = Appointment::where(['doctor_id'=>$request->user()->doctor->id])->with('patient')->get();
+            $appointments = Appointment::where(['doctor_id' => $request->user()->doctor->id])->with(['patient'])->get();
 
-            if (count($appointments)>0) {
+            if (count($appointments) > 0) {
                 return response()->json([
                     'status' => true,
                     'data' => $appointments,
                 ], 200);
-            }else {
+            } else {
                 return response()->json([
                     'status' => false,
                     'message' => 'No Appointment Found.',
@@ -49,6 +56,7 @@ class DoctorAppointmentController extends Controller
                 $appointmentData['patient'] = $patient;
                 $appointmentData['previousAppointments'] = $previousAppointments;
                 $appointmentData['review'] = $appointment->review;
+                $appointmentData['payment'] = $appointment->payment;
                 // $appointmentData['healthRecord'] = $healthRecord;
 
                 return response()->json([
@@ -71,89 +79,82 @@ class DoctorAppointmentController extends Controller
 
     public function doctor_update_status(Request $request)
     {
-
         if ($request->user()->tokenCan('doctor')) {
-
             $request->validate([
                 'appointment_id' => 'required',
                 'status' => 'required|string', //['Pending', 'Scheduled', 'No Response', 'Ongoing', 'Completed', 'Cancelled']
                 'remark' => 'nullable',
             ]);
 
-            $appointment = Appointment::where('id', '=', $request->appointment_id)->update([
-                'status' => $request->status,
-            ]);
+            $appointment = Appointment::findOrFail($request->appointment_id);
+            $appointment->status = $request->status;
+            $appointment->save();
 
-            $appointment = Appointment::where('id', '=', $request->appointment_id)->get();
+            // if ($request->status == "Scheduled" && in_array($appointment->type, ['Voice', 'Video'])) {
+            //     $meetLink = $this->createGoogleMeetLink($appointment);
+            //     $appointment->meeting_link = $meetLink;
+            //     $appointment->save();
+            // }
 
-            if (count($appointment)>0) {
-                $appointment = $appointment[0];
-
-                if ($request->status == "Scheduled") {
-                    $mailData = [
-                        'title' => 'Virtual Appointment Confirmed',
-                        'body' => [
-                            "Dear ".$appointment->patient->first_name.",",
-                            "We are pleased to inform you that your virtual appointment with Dr. ".$appointment->doctor->first_name." has been confirmed and scheduled.",
-                            "Appointment Details:",
-                            "Date and Time: ".$appointment->appointment_date." at ".$appointment->appointment_time." ",
-                            "Doctor: Dr. ".$appointment->doctor->first_name." ",
-                            // "To join the virtual appointment, please use the link below:",
-                            // "Virtual Meeting Link: [Join Appointment]($appointment->meeting_link)",
-                            "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
-                            "We look forward to assisting you with your healthcare needs.",
-                            "Best regards,",
-                            "Quick Clinic Team",
-                        ],
-                    ];
-                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
-                }
-
-                if ($request->status == "Cancelled") {
-                    $mailData = [
-                        'title' => 'Appointment Cancelled',
-                        'body' => [
-                            "Dear ".$appointment->patient->first_name.",",
-                            "We regret to inform you that your appointment with Dr. ".$appointment->doctor->first_name." on ".$appointment->appointment_date." at ".$appointment->appointment_time." has been cancelled.",
-                            "Reason For Cancelation: ".$request->remark." ",
-                            "We apologize for any inconvenience this may cause. Please note that you can reschedule your appointment or choose another doctor by visiting our app.",
-                            "If you have any questions or need assistance with rescheduling, feel free to reach out to our support team at support@quick-clinic.org.",
-                            "Thank you for your understanding.",
-                            "Best regards,",
-                            "Quick Clinic Team",
-                        ],
-                    ];
-                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
-                }
-
-                if ($request->status == "No Response") {
-                    $mailData = [
-                        'title' => 'Appointment Cancelled - No Response',
-                        'body' => [
-                            "Dear ".$appointment->patient->first_name.",",
-                            "We regret to inform you that your appointment with Dr. ".$appointment->doctor->first_name." on ".$appointment->appointment_date." at ".$appointment->appointment_time." has been cancelled.",
-                            "Reason For Cancelation: ".$request->remark." ",
-                            "We apologize for any inconvenience this may cause. Please note that you can reschedule your appointment or choose another doctor by visiting our app.",
-                            "If you have any questions or need assistance with rescheduling, feel free to reach out to our support team at support@quick-clinic.org.",
-                            "Thank you for your understanding.",
-                            "Best regards,",
-                            "Quick Clinic Team",
-                        ],
-                    ];
-                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
-                }
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Appointment has been successfuly requested. you will be updated once the doctor confirms it.',
-                    'data' => $appointment,
-                ], 200);
-            }else{
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Failed, please try again.',
-                ], 422);
+            if ($request->status == "Scheduled") {
+                $mailData = [
+                    'title' => 'Virtual Appointment Confirmed',
+                    'body' => [
+                        "Dear " . $appointment->patient->first_name . ",",
+                        "We are pleased to inform you that your virtual appointment with Dr. " . $appointment->doctor->first_name . " has been confirmed and scheduled.",
+                        "Appointment Details:",
+                        "Date and Time: " . $appointment->appointment_date . " at " . $appointment->appointment_time . " ",
+                        "Doctor: Dr. " . $appointment->doctor->first_name . " ",
+                        "To join the virtual appointment, please use the link below:",
+                        "Virtual Meeting Link: " . $appointment->meeting_link,
+                        "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
+                        "We look forward to assisting you with your healthcare needs.",
+                        "Best regards,",
+                        "Quick Clinic Team",
+                    ],
+                ];
+                MukeeyMailService::send($appointment->patient->user->email, $mailData);
             }
+
+            if ($request->status == "Cancelled") {
+                $mailData = [
+                    'title' => 'Appointment Cancelled',
+                    'body' => [
+                        "Dear " . $appointment->patient->first_name . ",",
+                        "We regret to inform you that your appointment with Dr. " . $appointment->doctor->first_name . " on " . $appointment->appointment_date . " at " . $appointment->appointment_time . " has been cancelled.",
+                        "Reason For Cancelation: " . $request->remark . " ",
+                        "We apologize for any inconvenience this may cause. Please note that you can reschedule your appointment or choose another doctor by visiting our app.",
+                        "If you have any questions or need assistance with rescheduling, feel free to reach out to our support team at support@quick-clinic.org.",
+                        "Thank you for your understanding.",
+                        "Best regards,",
+                        "Quick Clinic Team",
+                    ],
+                ];
+                MukeeyMailService::send($appointment->patient->user->email, $mailData);
+            }
+
+            if ($request->status == "No Response") {
+                $mailData = [
+                    'title' => 'Appointment Cancelled - No Response',
+                    'body' => [
+                        "Dear " . $appointment->patient->first_name . ",",
+                        "We regret to inform you that your appointment with Dr. " . $appointment->doctor->first_name . " on " . $appointment->appointment_date . " at " . $appointment->appointment_time . " has been cancelled.",
+                        "Reason For Cancelation: " . $request->remark . " ",
+                        "We apologize for any inconvenience this may cause. Please note that you can reschedule your appointment or choose another doctor by visiting our app.",
+                        "If you have any questions or need assistance with rescheduling, feel free to reach out to our support team at support@quick-clinic.org.",
+                        "Thank you for your understanding.",
+                        "Best regards,",
+                        "Quick Clinic Team",
+                    ],
+                ];
+                MukeeyMailService::send($appointment->patient->user->email, $mailData);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Appointment status updated successfully.',
+                'data' => $appointment,
+            ], 200);
         } else {
             return response()->json([
                 'status' => false,
@@ -232,5 +233,91 @@ class DoctorAppointmentController extends Controller
                 'message' => 'Failed to Authorize Token!',
             ], 401);
         }
+    }
+
+    // public function createGoogleMeetLink(Appointment $appointment)
+    // {
+    //     // $client = new Google_Client();
+    //     $client = new Client();
+    //     // $client->setDeveloperKey('AIzaSyAxwtNl10ZFsNi58tO5kQYboU-FCuanGHM');
+    //     $client->setAuthConfig(storage_path('app/google-calendar-credentials.json'));
+    //     $client->addScope(Calendar::CALENDAR);
+
+    //     $service = new Calendar($client);
+
+    //     $event = new Event(array(
+    //         'summary' => 'Appointment with Dr. ' . $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name,
+    //         'description' => $appointment->description_of_problem,
+    //         'start' => array(
+    //             'dateTime' => $appointment->appointment_date . 'T' . $appointment->appointment_time . ':00',
+    //             'timeZone' => 'UTC',
+    //         ),
+    //         'end' => array(
+    //             'dateTime' => date('Y-m-d\TH:i:s', strtotime($appointment->appointment_date . ' ' . $appointment->appointment_time . ' +1 hour')),
+    //             'timeZone' => 'UTC',
+    //         ),
+    //         'attendees' => array(
+    //             array('email' => $appointment->patient->user->email),
+    //             array('email' => $appointment->doctor->user->email),
+    //         ),
+    //         'conferenceData' => array(
+    //             'createRequest' => array(
+    //                 'requestId' => 'quickclinic-' . $appointment->id,
+    //                 'conferenceSolutionKey' => array('type' => 'hangoutsMeet'),
+    //             ),
+    //         ),
+    //     ));
+
+    //     $calendarId = 'primary';
+    //     $event = $service->events->insert($calendarId, $event, array('conferenceDataVersion' => 1));
+
+    //     return $event->hangoutLink;
+    // }
+
+    public function test(Request $request, Appointment $appointment)
+    {
+        // Create a new event
+        $event = new Event;
+
+        $event->name = 'Appointment with Dr. ' . $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name;
+        $event->description = $appointment->description_of_problem;
+
+        // Parse the date and time correctly
+        $dateTime = Carbon::createFromFormat('Y-m-d H-i', $appointment->appointment_date . ' ' . $appointment->appointment_time);
+        if (!$dateTime) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid date or time format',
+            ], 400);
+        }
+
+        $event->startDateTime = $dateTime;
+        $event->endDateTime = $dateTime->copy()->addHour();
+
+        // Add attendees
+        $event->addAttendee(['email' => $appointment->patient->user->email]);
+        $event->addAttendee(['email' => $appointment->doctor->user->email]);
+
+        // Enable Google Meet
+        $event->addMeetLink();
+
+        // Save the event
+        $createdEvent = $event->save();
+
+        // Get the Google Meet link
+        $meetLink = $createdEvent->meetLink;
+
+        // Update the appointment with the meet link
+        $appointment->meeting_link = $meetLink;
+        $appointment->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Google Meet event created successfully',
+            'data' => [
+                'event_id' => $createdEvent->id,
+                'meet_link' => $meetLink,
+            ],
+        ], 200);
     }
 }

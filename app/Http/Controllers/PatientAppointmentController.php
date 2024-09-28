@@ -6,16 +6,27 @@ use App\Mail\AppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Services\MukeeyMailService;
+use App\Services\PaystackService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Models\Payment;
+use Illuminate\Support\Facades\Validator;
 
 class PatientAppointmentController extends Controller
 {
+    protected $paystackService;
+
+    public function __construct(PaystackService $paystackService)
+    {
+        $this->paystackService = $paystackService;
+    }
+
     public function get_all_appointments(Request $request)
     {
         if ($request->user()->tokenCan('patient')) {
             $appointments = Appointment::where(['patient_id' => $request->user()->patient->id])
-                ->with(['review', 'doctor'])
+                ->with(['review', 'doctor', 'payment'])
                 ->orderBy('appointment_date', 'desc')
                 ->get()
                 ->map(function ($appointment) {
@@ -29,6 +40,8 @@ class PatientAppointmentController extends Controller
                         'has_report' => !is_null($appointment->report_url),
                         'has_prescription' => !is_null($appointment->prescription_url),
                         'review' => $appointment->review,
+                        'payment' => $appointment->payment,
+                        'type' => $appointment->type,
                     ];
                 });
 
@@ -55,9 +68,10 @@ class PatientAppointmentController extends Controller
     {
         if ($request->user()->tokenCan('patient')) {
             if ($appointment->patient_id === $request->user()->patient->id) {
-                $appointment->load(['review', 'doctor']);
+                $appointment->load(['review', 'doctor', 'payment']);
 
                 $previousAppointments = Appointment::where('patient_id', $request->user()->patient->id)
+                    ->whereIn('status', ['Scheduled', 'Completed'])
                     ->where('appointment_date', '<', $appointment->appointment_date)
                     ->orderBy('appointment_date', 'desc')
                     ->limit(5)
@@ -68,6 +82,8 @@ class PatientAppointmentController extends Controller
                             'appointment_date' => $prevAppointment->appointment_date,
                             'doctor_name' => $prevAppointment->doctor->first_name . ' ' . $prevAppointment->doctor->last_name,
                             'doctor_remark' => $prevAppointment->doctor_remark,
+                            'type' => $prevAppointment->type,
+                            'doctor' => $prevAppointment->doctor,
                         ];
                     });
 
@@ -83,6 +99,10 @@ class PatientAppointmentController extends Controller
                     'prescription_url' => $appointment->prescription_url,
                     'review' => $appointment->review,
                     'previous_appointments' => $previousAppointments,
+                    'payment' => $appointment->payment,
+                    'type' => $appointment->type,
+                    'doctor' => $appointment->doctor,
+                    'meeting_link' => $appointment->meeting_link,
                 ];
 
                 return response()->json([
@@ -103,19 +123,82 @@ class PatientAppointmentController extends Controller
         }
     }
 
+    public function initiate_appointment_payment(Request $request)
+    {
+        if ($request->user()->tokenCan('patient')) {
+            $validator = Validator::make($request->all(), [
+                'doctor_id' => 'required|exists:doctors,id',
+                'type' => 'required|in:Voice,Video,Message',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $doctor = Doctor::findOrFail($request->doctor_id);
+            $fee = $doctor->{strtolower($request->type) . '_consultation_fee'};
+
+            // return $request->user()->email;
+            $paymentData = $this->paystackService->initiatePayment(
+                $fee,
+                $request->user()->email,
+                $request->user()->patient->id,
+                $doctor->id
+            );
+
+            if ($paymentData) {
+                return response()->json([
+                    'status' => true,
+                    'payment_url' => $paymentData['authorization_url'],
+                    'reference' => $paymentData['reference'],
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to initiate payment.',
+                ], 422);
+            }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Authorize Token!',
+            ], 401);
+        }
+    }
+
     public function schedule_appointment(Request $request)
     {
-
         if ($request->user()->tokenCan('patient')) {
 
-            $request->validate([
+            $validator = Validator::make($request->all(), [
                 'doctor_id' => 'required',
                 'appointment_date' => 'required',
                 'appointment_time' => 'required',
                 'description_of_problem' => 'required|string',
                 'attachment' => 'nullable',
                 'type' => 'required|string', //['Voice', 'Video', 'Message']
+                'payment_reference' => 'required|string',
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            // Verify payment
+            $payment = Payment::where('reference', $request->payment_reference)->first();
+
+            if (!$payment || $payment->status !== 'success') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment verification failed.',
+                ], 422);
+            }
 
             $doctor = Doctor::find($request->doctor_id);
 
@@ -135,6 +218,7 @@ class PatientAppointmentController extends Controller
                 'attachment' => $attachment,
                 'type' => $request->type,
                 'status' => 'Pending',
+                'payment_reference' => $request->payment_reference,
             ]);
 
             if ($appointment) {
@@ -174,6 +258,26 @@ class PatientAppointmentController extends Controller
                 'status' => false,
                 'message' => 'Failed to Authorize Token!',
             ], 401);
+        }
+    }
+
+    public function handlePaystackCallback(Request $request)
+    {
+        $paymentVerified = $this->paystackService->verifyPayment($request->reference);
+
+        if ($paymentVerified) {
+            // Payment was successful, you can update your database here if needed
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment successful',
+                'payment_status' => $paymentVerified,
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment failed',
+                'payment_status' => $paymentVerified,
+            ], 422);
         }
     }
 }

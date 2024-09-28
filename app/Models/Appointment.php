@@ -29,6 +29,9 @@ class Appointment extends Model
         'doctor_remark',
         'report_url',
         'prescription_url',
+
+        'payment_reference',
+        'meeting_link',
     ];
 
     public function patient(): BelongsTo
@@ -52,5 +55,10 @@ class Appointment extends Model
         $fileName = time() . '_' . $file->getClientOriginalName();
         $filePath = $file->storeAs('appointments', $fileName, 'public/appointments');
         $this->update([$type . '_url' => '/storage/appointments/' . $filePath]);
+    }
+
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class, 'payment_reference', 'reference');
     }
 }

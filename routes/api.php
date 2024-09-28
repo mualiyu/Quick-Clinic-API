@@ -53,11 +53,14 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
         Route::get('/list', [PatientAppointmentController::class, 'get_all_appointments']);
         Route::get('/single/{appointment}', [PatientAppointmentController::class, 'get_single_appointment']);
 
+        Route::post('/initiate-appointment-payment', [PatientAppointmentController::class, 'initiate_appointment_payment']);
+
         Route::post('/schedule-appointment', [PatientAppointmentController::class, 'schedule_appointment']);
 
         Route::post('/{appointment}/review', [ReviewController::class, 'store']);
     });
 });
+Route::get('/paystack/patient/callback/verify', [PatientAppointmentController::class, 'handlePaystackCallback']);
 
 
 // Routes for Doctors
@@ -133,5 +136,7 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
     // Route::delete('/profile', [DoctorController::class, 'deleteProfile']);
     // Route::delete('/account', [DoctorController::class, 'deleteAccount']);
 });
+
+
 
 
