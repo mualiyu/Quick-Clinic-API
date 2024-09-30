@@ -22,7 +22,8 @@ class PaystackService
                 'amount' => $amount * 100,  // Amount in kobo
                 'email' => $email,
                 'reference' => $reference,
-                'callback_url' => "http://localhost:3000/verify_transaction",
+                'callback_url' => "https://quick-clinic.netlify.app/verify_transaction",
+                // 'callback_url' => "http://localhost:3000/verify_transaction",
                 // 'callback_url' => route('pay.callback'),
             ]);
 
