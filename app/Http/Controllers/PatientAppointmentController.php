@@ -105,7 +105,7 @@ class PatientAppointmentController extends Controller
                     'type' => $appointment->type,
                     'doctor' => $appointment->doctor,
                     'meeting_link' => $appointment->meeting_link,
-                    'payment_status' => $appointment->payment->status,
+                    'payment_status' => $appointment->payment->status ?? 'Pending',
                 ];
 
                 return response()->json([
