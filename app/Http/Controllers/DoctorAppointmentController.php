@@ -52,13 +52,18 @@ class DoctorAppointmentController extends Controller
                 $previousAppointments = $appointment->patient->appointments;
                 // $healthRecord = HealthRecord::where('patient_id', '=', $appointment->patient->id)->get();
 
+                // Check if appointment has payment
+                $hasPayment = $appointment->payment()->exists();
+                // Add payment status to the appointment data
+                $paymentStatus = $hasPayment ? $appointment->payment->status : 'Pending';
+
                 $appointmentData = $appointment->toArray();
                 $appointmentData['patient'] = $patient;
                 $appointmentData['previousAppointments'] = $previousAppointments;
                 $appointmentData['review'] = $appointment->review;
                 $appointmentData['payment'] = $appointment->payment;
                 $appointmentData['meeting_link'] = $appointment->meeting_link;
-                // $appointmentData['payment_status'] = $appointment->payment->status;
+                $appointmentData['payment_status'] = $paymentStatus;
                 // $appointmentData['healthRecord'] = $healthRecord;
 
                 return response()->json([
