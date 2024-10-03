@@ -43,7 +43,7 @@ class PatientAppointmentController extends Controller
                         'payment' => $appointment->payment,
                         'type' => $appointment->type,
                         'meeting_link' => $appointment->meeting_link,
-                        'payment_status' => $appointment->payment->status,
+                        // 'payment_status' => $appointment->payment->status,
                     ];
                 });
 
@@ -89,6 +89,11 @@ class PatientAppointmentController extends Controller
                         ];
                     });
 
+                // Check if appointment has payment
+                $hasPayment = $appointment->payment()->exists();
+
+                // Add payment status to the appointment data
+                $paymentStatus = $hasPayment ? $appointment->payment->status : 'Pending';
                 $appointmentData = [
                     'id' => $appointment->id,
                     'appointment_date' => $appointment->appointment_date,
@@ -105,7 +110,7 @@ class PatientAppointmentController extends Controller
                     'type' => $appointment->type,
                     'doctor' => $appointment->doctor,
                     'meeting_link' => $appointment->meeting_link,
-                    'payment_status' => $appointment->payment->status ?? 'Pending',
+                    'payment_status' => $paymentStatus,
                 ];
 
                 return response()->json([
