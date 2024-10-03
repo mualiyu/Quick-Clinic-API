@@ -23,7 +23,7 @@ class DoctorAppointmentController extends Controller
     public function get_all_appointments(Request $request)
     {
         if ($request->user()->tokenCan('doctor')) {
-            $appointments = Appointment::where(['doctor_id' => $request->user()->doctor->id])->with(['patient'])->get();
+            $appointments = Appointment::where(['doctor_id' => $request->user()->doctor->id])->with(['patient', 'payment'])->get();
 
             if (count($appointments) > 0) {
                 return response()->json([
@@ -57,6 +57,8 @@ class DoctorAppointmentController extends Controller
                 $appointmentData['previousAppointments'] = $previousAppointments;
                 $appointmentData['review'] = $appointment->review;
                 $appointmentData['payment'] = $appointment->payment;
+                $appointmentData['meeting_link'] = $appointment->meeting_link;
+                $appointmentData['payment_status'] = $appointment->payment->status;
                 // $appointmentData['healthRecord'] = $healthRecord;
 
                 return response()->json([
@@ -108,6 +110,7 @@ class DoctorAppointmentController extends Controller
                         "To join the virtual appointment, please use the link below:",
                         "Virtual Meeting Link: " . $appointment->meeting_link,
                         "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
+                        "Please proceed to make the payment for your appointment through our app to confirm your booking.",
                         "We look forward to assisting you with your healthcare needs.",
                         "Best regards,",
                         "Quick Clinic Team",

@@ -42,6 +42,8 @@ class PatientAppointmentController extends Controller
                         'review' => $appointment->review,
                         'payment' => $appointment->payment,
                         'type' => $appointment->type,
+                        'meeting_link' => $appointment->meeting_link,
+                        'payment_status' => $appointment->payment->status,
                     ];
                 });
 
@@ -103,6 +105,7 @@ class PatientAppointmentController extends Controller
                     'type' => $appointment->type,
                     'doctor' => $appointment->doctor,
                     'meeting_link' => $appointment->meeting_link,
+                    'payment_status' => $appointment->payment->status,
                 ];
 
                 return response()->json([
@@ -123,11 +126,15 @@ class PatientAppointmentController extends Controller
         }
     }
 
-    public function initiate_appointment_payment(Request $request)
+    public function schedule_appointment(Request $request)
     {
         if ($request->user()->tokenCan('patient')) {
             $validator = Validator::make($request->all(), [
                 'doctor_id' => 'required|exists:doctors,id',
+                'appointment_date' => 'required|date',
+                'appointment_time' => 'required',
+                'description_of_problem' => 'required|string',
+                'attachment' => 'nullable|file',
                 'type' => 'required|in:Voice,Video,Message',
             ]);
 
@@ -138,10 +145,98 @@ class PatientAppointmentController extends Controller
                 ], 422);
             }
 
-            $doctor = Doctor::findOrFail($request->doctor_id);
-            $fee = $doctor->{strtolower($request->type) . '_consultation_fee'};
+            $doctor = Doctor::find($request->doctor_id);
 
-            // return $request->user()->email;
+            $attachment = '';
+            if ($request->hasFile('attachment')) {
+                $attachment = $request->file('attachment')->store('public/appointment');
+                $attachment = url('/storage/' . str_replace('public/', '', $attachment));
+            }
+
+            $appointment = Appointment::create([
+                'patient_id' => $request->user()->patient->id,
+                'doctor_id' => $request->doctor_id,
+                'appointment_date' => $request->appointment_date,
+                'appointment_time' => $request->appointment_time,
+                'description_of_problem' => $request->description_of_problem,
+                'attachment' => $attachment,
+                'type' => $request->type,
+                'status' => 'Pending',
+            ]);
+
+            if ($appointment) {
+                // Send email to doctor about new appointment request
+                $mailData = [
+                    'title' => 'New Appointment Request',
+                    'body' => [
+                        "Dear Dr. ".$doctor->first_name.",",
+                        "We are pleased to inform you that you have a new appointment request at Quick Clinic.",
+                        "Patient Details:",
+                        "Name: ".$request->user()->patient->first_name." ".$request->user()->patient->last_name,
+                        "Email: ".$request->user()->email,
+                        "Appointment Date and Time: ".$appointment->appointment_date." at ".$appointment->appointment_time,
+                        "Reason for Appointment: ".$appointment->description_of_problem,
+                        "Please log in to your Quick Clinic account to review and confirm this appointment. If you have any questions or need further assistance, feel free to contact our support team at support@quick-clinic.org.",
+                        "Thank you for your dedication and for being a valued member of the Quick Clinic team.",
+                        "Best regards,",
+                        "Quick Clinic Team",
+                    ],
+                ];
+
+                MukeeyMailService::send($doctor->user->email, $mailData);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Appointment has been successfully requested. You will be updated once the doctor confirms it.',
+                    'data' => $appointment,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to create appointment, please try again.',
+                ], 422);
+            }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Authorize Token!',
+            ], 401);
+        }
+    }
+
+    public function initiate_appointment_payment(Request $request)
+    {
+        if ($request->user()->tokenCan('patient')) {
+            $validator = Validator::make($request->all(), [
+                'appointment_id' => 'required|exists:appointments,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $appointment = Appointment::findOrFail($request->appointment_id);
+
+            if ($appointment->patient_id !== $request->user()->patient->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized to initiate payment for this appointment.',
+                ], 403);
+            }
+
+            if ($appointment->status !== 'Scheduled') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment can only be initiated for scheduled appointments.',
+                ], 422);
+            }
+
+            $doctor = $appointment->doctor;
+            $fee = $doctor->{strtolower($appointment->type) . '_consultation_fee'};
+
             $paymentData = $this->paystackService->initiatePayment(
                 $fee,
                 $request->user()->email,
@@ -150,6 +245,9 @@ class PatientAppointmentController extends Controller
             );
 
             if ($paymentData) {
+                // Update the appointment with the payment reference
+                $appointment->update(['payment_reference' => $paymentData['reference']]);
+
                 return response()->json([
                     'status' => true,
                     'payment_url' => $paymentData['authorization_url'],
@@ -169,108 +267,47 @@ class PatientAppointmentController extends Controller
         }
     }
 
-    public function schedule_appointment(Request $request)
-    {
-        if ($request->user()->tokenCan('patient')) {
-
-            $validator = Validator::make($request->all(), [
-                'doctor_id' => 'required',
-                'appointment_date' => 'required',
-                'appointment_time' => 'required',
-                'description_of_problem' => 'required|string',
-                'attachment' => 'nullable',
-                'type' => 'required|string', //['Voice', 'Video', 'Message']
-                'payment_reference' => 'required|string',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => $validator->errors()->first()
-                ], 422);
-            }
-
-            // Verify payment
-            $payment = Payment::where('reference', $request->payment_reference)->first();
-
-            if (!$payment || $payment->status !== 'success') {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Payment verification failed.',
-                ], 422);
-            }
-
-            $doctor = Doctor::find($request->doctor_id);
-
-            $attachment = '';
-            if ($request->has('attachment') && !empty($request->attachment)) {
-                $attachment = $request->file('attachment')->store('public/appointment');
-                $attachment = explode('/', $attachment);
-                $attachment = url('/storage/appointment/' . $attachment[2]);
-            }
-
-            $appointment = Appointment::create([
-                'patient_id' => $request->user()->patient->id,
-                'doctor_id' => $request->doctor_id,
-                'appointment_date' => $request->appointment_date,
-                'appointment_time' => $request->appointment_time,
-                'description_of_problem' => $request->description_of_problem,
-                'attachment' => $attachment,
-                'type' => $request->type,
-                'status' => 'Pending',
-                'payment_reference' => $request->payment_reference,
-            ]);
-
-            if ($appointment) {
-
-                $mailData = [
-                    'title' => 'New Appointment Request',
-                    'body' => [
-                        "Dear Dr. ".$doctor->first_name.",",
-                        "We are pleased to inform you that you have a new appointment request at Quick Clinic.",
-                        "Patient Details:",
-                        "Name: ".$request->user()->patient->name." ",
-                        "Email: ".$request->user()->patient->email." ",
-                        "Appointment Date and Time: ".$appointment->appointment_date." at ".$appointment->appointment_time." ",
-                        "Reason for Appointment: ".$appointment->description_of_problem." ",
-                        "Please log in to your Quick Clinic account to review and confirm this appointment. If you have any questions or need further assistance, feel free to contact our support team at support@quick-clinic.org.",
-                        "Thank you for your dedication and for being a valued member of the Quick Clinic team.",
-                        "Best regards,",
-                        "Quick Clinic Team",
-                    ],
-                ];
-
-                MukeeyMailService::send($doctor->user->email, $mailData);
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Appointment has been successfuly requested. you will be updated once the doctor confirms it.',
-                    'data' => $appointment,
-                ], 200);
-            }else{
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Failed, please try again.',
-                ], 422);
-            }
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to Authorize Token!',
-            ], 401);
-        }
-    }
-
     public function handlePaystackCallback(Request $request)
     {
         $paymentVerified = $this->paystackService->verifyPayment($request->reference);
 
         if ($paymentVerified) {
-            // Payment was successful, you can update your database here if needed
+            $payment = Payment::where('reference', $request->reference)->firstOrFail();
+            $appointment = Appointment::where('payment_reference', $request->reference)->firstOrFail();
+
+            // Update appointment status to 'Paid'
+            // $appointment->update(['status' => 'Paid']);
+
+            // Send email to doctor about paid and scheduled appointment
+            $doctor = $appointment->doctor;
+            $patient = $appointment->patient;
+
+            $mailData = [
+                'title' => 'Appointment Payment Confirmed',
+                'body' => [
+                    "Dear Dr. " . $doctor->first_name . " " . $doctor->last_name . ",",
+                    "We are pleased to inform you that the appointment you previously accepted has now been paid for and is officially scheduled.",
+                    "Appointment Details:",
+                    "Patient: " . $patient->first_name . " " . $patient->last_name,
+                    "Date: " . $appointment->appointment_date,
+                    "Time: " . $appointment->appointment_time,
+                    "Type: " . $appointment->type,
+                    "Payment Status: Paid",
+                    "Please ensure you're prepared for this appointment at the scheduled time. You can log in to your account for more details if needed.",
+                    "If you have any questions or need to make any changes, please contact our support team.",
+                    "Thank you for your service.",
+                    "Best regards,",
+                    "Quick Clinic Team"
+                ]
+            ];
+
+            MukeeyMailService::send($doctor->user->email, $mailData);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Payment successful',
                 'payment_status' => $paymentVerified,
+                'appointment_status' => $appointment->status,
             ], 200);
         } else {
             return response()->json([
