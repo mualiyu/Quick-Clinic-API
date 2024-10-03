@@ -58,7 +58,7 @@ class DoctorAppointmentController extends Controller
                 $appointmentData['review'] = $appointment->review;
                 $appointmentData['payment'] = $appointment->payment;
                 $appointmentData['meeting_link'] = $appointment->meeting_link;
-                $appointmentData['payment_status'] = $appointment->payment->status;
+                // $appointmentData['payment_status'] = $appointment->payment->status;
                 // $appointmentData['healthRecord'] = $healthRecord;
 
                 return response()->json([
