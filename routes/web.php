@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DoctorAppointmentController;
+use App\Http\Controllers\PatientAppointmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
@@ -46,4 +47,13 @@ Route::get('/pay/callback', function (Request $request) {
     ], 200);
 })->name("pay.callback");
 
-Route::get("test/google/{appointment}", [DoctorAppointmentController::class, 'test']);
+// Route::get("test/google/{appointment}", [DoctorAppointmentController::class, 'test']);
+
+Route::get("payments/{appointment}", [PatientAppointmentController::class, 'initiate_appointment_payment'])->name('patients.payment.url');
+
+Route::get("payments/{reference}/v", [PatientAppointmentController::class, 'handlePaystackCallbackWeb'])->name('patients.payment.callback');
+
+// Route::get('ttt', function (){
+//     $v = base64_encode("1");
+//    return $v ."  \n ". base64_decode($v);
+// });

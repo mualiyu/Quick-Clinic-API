@@ -60,7 +60,7 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
         Route::post('/{appointment}/review', [ReviewController::class, 'store']);
     });
 });
-Route::get('/paystack/patient/callback/verify', [PatientAppointmentController::class, 'handlePaystackCallback']);
+// Route::get('/paystack/patient/callback/verify', [PatientAppointmentController::class, 'handlePaystackCallback']);
 
 
 // Routes for Doctors

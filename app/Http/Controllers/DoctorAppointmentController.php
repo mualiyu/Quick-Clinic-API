@@ -17,6 +17,7 @@ use App\Services\MukeeyMailService;
 // use Google\Service\YouTube;
 use Spatie\GoogleCalendar\Event;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 
 class DoctorAppointmentController extends Controller
 {
@@ -104,6 +105,10 @@ class DoctorAppointmentController extends Controller
             // }
 
             if ($request->status == "Scheduled") {
+                // $encodeAppointment = base64_encode($appointment->id);
+                $encodeAppointment =  Crypt::encrypt($appointment->id);
+                $paymentUrl = route('patients.payment.url', ['appointment' => $encodeAppointment]);
+
                 $mailData = [
                     'title' => 'Virtual Appointment Confirmed',
                     'body' => [
@@ -112,10 +117,13 @@ class DoctorAppointmentController extends Controller
                         "Appointment Details:",
                         "Date and Time: " . $appointment->appointment_date . " at " . $appointment->appointment_time . " ",
                         "Doctor: Dr. " . $appointment->doctor->first_name . " ",
-                        "To join the virtual appointment, please use the link below:",
-                        "Virtual Meeting Link: " . $appointment->meeting_link,
-                        "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
-                        "Please proceed to make the payment for your appointment through our app to confirm your booking.",
+                        // "To join the virtual appointment, please use the link below:",
+                        // "Virtual Meeting Link: " . $appointment->meeting_link,
+                        // "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
+                        "Please click the link below to make your payment and confirm your booking:",
+                        "",
+                        " -   *Payment Link: " . $paymentUrl,
+                        "",
                         "We look forward to assisting you with your healthcare needs.",
                         "Best regards,",
                         "Quick Clinic Team",
