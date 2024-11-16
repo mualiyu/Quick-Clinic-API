@@ -377,6 +377,7 @@ class PatientAppointmentController extends Controller
                     "Date: " . $appointment->appointment_date,
                     "Time: " . $appointment->appointment_time,
                     "Type: " . $appointment->type,
+                    "Virtual Meeting Link: " . $appointment->meeting_link,
                     "Payment Status: Paid",
                     "Please ensure you're prepared for this appointment at the scheduled time. You can log in to your account for more details if needed.",
                     "If you have any questions or need to make any changes, please contact our support team.",

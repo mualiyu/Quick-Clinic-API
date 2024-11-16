@@ -177,6 +177,31 @@ class PatientController extends Controller
         }
     }
 
+    public function get_all_sys_doctors(Request $request)
+    {
+        if ($request->user()->tokenCan('patient')) {
+            $doctors = Doctor::where('is_sys_consultant', '=', 1)->with('availabilities')->get();
+
+            if ($doctors->isNotEmpty()) {
+                return response()->json([
+                    'status' => true,
+                    'message' => "List of all system doctors",
+                    'data' => $doctors,
+                ], 200);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => "No doctors found!"
+                ], 404);
+            }
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => trans('Failed to Authorize Token!')
+            ], 401);
+        }
+    }
+
     public function get_single_doctors(Request $request, Doctor $doctor)
     {
         if ($request->user()->tokenCan('patient')) {

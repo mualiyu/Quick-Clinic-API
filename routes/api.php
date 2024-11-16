@@ -47,6 +47,9 @@ Route::middleware(['auth:sanctum'])->prefix('/patient')->group(function () {
 
     // get doctors
     Route::get('/doctors-list', [PatientController::class, 'get_all_doctors']);
+
+    Route::get('/sys-doctors-list', [PatientController::class, 'get_all_sys_doctors']);
+
     Route::get('/doctors/{doctor}', [PatientController::class, 'get_single_doctors']);
 
     Route::middleware(['auth:sanctum'])->prefix('/appointment')->group(function () {
@@ -118,6 +121,7 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
         Route::delete('/{languageSupport}/delete', [LanguageSupportController::class, 'deleteLanguage']);
 
     });
+
     Route::get('/list/all-users', [AdminController::class, 'get_all_registered_users']);
 
     // Admin Patients section
@@ -127,6 +131,8 @@ Route::middleware(['auth:sanctum'])->prefix('/admin')->group(function () {
     });
     // Admin Doctors Section
     Route::prefix('/doctors')->group(function () {
+        Route::post('/register/sys', [AdminController::class, 'register_sys_doctor']);
+
         Route::get('/list', [AdminController::class, 'get_all_doctors']);
         Route::post('/approve', [AdminController::class, 'approve_doctor']);
     });

@@ -52,7 +52,7 @@ class LoginController extends Controller
                 'status' => true,
                 'data' => [
                     'user' => $user,
-                    'token' => $user->createToken($user->role, [$user->role])->plainTextToken
+                    'token' => $user->createToken($user->role, [$user->role == "sys_doctor" ? "doctor" : $user->role])->plainTextToken
                 ],
                 'message' => 'Login successfull.'
             ], 200);

@@ -113,6 +113,7 @@ class DoctorController extends Controller
                     'video_consultation_fee' => $request->video_consultation_fee,
                     'message_consultation_fee' => $request->message_consultation_fee,
                     'experiences' => $request->experiences,
+                    'is_sys_consultant' => $user->role == "sys_doctor" ? 1:0,
                 ];
                 $doctor = new Doctor($doctorData);
                 $user->doctor()->save($doctor);
@@ -126,7 +127,7 @@ class DoctorController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'message' => trans('Failed to Authorize Token!')
+                'message' => 'Failed to Authorize Token!',
             ], 401);
         }
     }

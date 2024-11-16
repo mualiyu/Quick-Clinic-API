@@ -43,6 +43,7 @@ class Doctor extends Model
         'registered_date',
         'is_approved',
         'is_available',
+        'is_sys_consultant',
         // new fields
         'voice_consultation_fee',
         'video_consultation_fee',

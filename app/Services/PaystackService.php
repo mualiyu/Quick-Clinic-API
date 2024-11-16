@@ -73,4 +73,27 @@ class PaystackService
 
         return false;
     }
+
+    public function initiateFreePayment($patientId, $doctorId)
+    {
+        try {
+            $reference = 'Q_FREE_CLINIC_' . uniqid();
+
+            Payment::create([
+                'patient_id' => $patientId,
+                'doctor_id' => $doctorId,
+                'reference' => $reference,
+                'amount' => 0,
+                'status' => 'success',
+                'payment_channel' => "Free Service",
+            ]);
+
+            return [
+                'reference' => $reference,
+            ];
+        } catch (\Exception $e) {
+            // Handle any exceptions
+            return null;
+        }
+    }
 }

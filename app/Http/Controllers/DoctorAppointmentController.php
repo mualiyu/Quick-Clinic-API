@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Services\MukeeyMailService;
+use App\Services\PaystackService;
 // use Google\Client;
 // use Google_Client;
 // use Google\Service\Calendar;
@@ -21,6 +22,13 @@ use Illuminate\Support\Facades\Crypt;
 
 class DoctorAppointmentController extends Controller
 {
+    protected $paystackService;
+
+    public function __construct(PaystackService $paystackService)
+    {
+        $this->paystackService = $paystackService;
+    }
+
     public function get_all_appointments(Request $request)
     {
         if ($request->user()->tokenCan('doctor')) {
@@ -105,31 +113,80 @@ class DoctorAppointmentController extends Controller
             // }
 
             if ($request->status == "Scheduled") {
-                // $encodeAppointment = base64_encode($appointment->id);
-                $encodeAppointment =  Crypt::encrypt($appointment->id);
-                $paymentUrl = route('patients.payment.url', ['appointment' => $encodeAppointment]);
 
-                $mailData = [
-                    'title' => 'Virtual Appointment Confirmed',
-                    'body' => [
-                        "Dear " . $appointment->patient->first_name . ",",
-                        "We are pleased to inform you that your virtual appointment with Dr. " . $appointment->doctor->first_name . " has been confirmed and scheduled.",
-                        "Appointment Details:",
-                        "Date and Time: " . $appointment->appointment_date . " at " . $appointment->appointment_time . " ",
-                        "Doctor: Dr. " . $appointment->doctor->first_name . " ",
-                        // "To join the virtual appointment, please use the link below:",
-                        // "Virtual Meeting Link: " . $appointment->meeting_link,
-                        // "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
-                        "Please click the link below to make your payment and confirm your booking:",
-                        "",
-                        " -   *Payment Link: " . $paymentUrl,
-                        "",
-                        "We look forward to assisting you with your healthcare needs.",
-                        "Best regards,",
-                        "Quick Clinic Team",
-                    ],
-                ];
-                MukeeyMailService::send($appointment->patient->user->email, $mailData);
+                $patient_age = Carbon::parse($appointment->patient->date_of_birth)->age;
+
+                if ($patient_age < 18) {
+                    // The patient is under 18
+
+                    $paymentData = $this->paystackService->initiateFreePayment(
+                        $appointment->patient->id,
+                        $appointment->doctor->id
+                    );
+
+                    if ($paymentData) {
+                        // Update the appointment with the payment reference
+                        $appointment->update(['payment_reference' => $paymentData['reference']]);
+
+                        $mailData = [
+                            'title' => 'Virtual Appointment Scheduled',
+                            'body' => [
+                                "Dear " . $appointment->patient->first_name . ",",
+                                "",
+                                "We are pleased to inform you that your virtual appointment with Dr. " . $appointment->doctor->first_name . " has been successfully scheduled.",
+                                "",
+                                "Appointment Details:",
+                                "Date and Time: " . $appointment->appointment_date . " at " . $appointment->appointment_time,
+                                "Doctor: Dr. " . $appointment->doctor->first_name,
+                                "",
+                                // "To join the virtual appointment, please use the link below:",
+                                // "Virtual Meeting Link: " . $appointment->meeting_link,
+                                // "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
+                                "As you are under the age of 18, we recommend having a parent or guardian present during your virtual consultation.",
+                                "",
+                                "If you have any questions or need further assistance, please feel free to reach out to us at support@quick-clinic.org.",
+                                "",
+                                "Thank you for choosing Quick Clinic. We look forward to assisting you with your healthcare needs.",
+                                "",
+                                "Best regards,",
+                                "Quick Clinic Team",
+                            ],
+                        ];
+                        MukeeyMailService::send($appointment->patient->user->email, $mailData);
+                    } else {
+                        return response()->json([
+                            'status' => true,
+                            'message' => 'Appointment status scheduled successfully, But system failed to update the payment details for Free service.',
+                            'data' => $appointment,
+                        ], 200);
+                    }
+                } else {
+                    // The patient is 18 or older
+                    $encodeAppointment =  Crypt::encrypt($appointment->id);
+                    $paymentUrl = route('patients.payment.url', ['appointment' => $encodeAppointment]);
+
+                    $mailData = [
+                        'title' => 'Virtual Appointment Confirmed',
+                        'body' => [
+                            "Dear " . $appointment->patient->first_name . ",",
+                            "We are pleased to inform you that your virtual appointment with Dr. " . $appointment->doctor->first_name . " has been confirmed and scheduled.",
+                            "Appointment Details:",
+                            "Date and Time: " . $appointment->appointment_date . " at " . $appointment->appointment_time . " ",
+                            "Doctor: Dr. " . $appointment->doctor->first_name . " ",
+                            // "To join the virtual appointment, please use the link below:",
+                            // "Virtual Meeting Link: " . $appointment->meeting_link,
+                            // "Please make sure to join the meeting a few minutes before the scheduled time. If you need to reschedule or have any questions, feel free to contact us at support@quick-clinic.org.",
+                            "Please click the link below to make your payment and confirm your booking:",
+                            "",
+                            " -   *Payment Link: " . $paymentUrl,
+                            "",
+                            "We look forward to assisting you with your healthcare needs.",
+                            "Best regards,",
+                            "Quick Clinic Team",
+                        ],
+                    ];
+                    MukeeyMailService::send($appointment->patient->user->email, $mailData);
+                }
             }
 
             if ($request->status == "Cancelled") {
@@ -290,7 +347,7 @@ class DoctorAppointmentController extends Controller
     //     return $event->hangoutLink;
     // }
 
-    public function test(Request $request, Appointment $appointment)
+    public function test(Request $request, Appointment $appointment) //Google meet link
     {
         // Create a new event
         $event = new Event;
