@@ -62,7 +62,7 @@ class RegisterController extends Controller
             try {
                 MukeeyMailService::send($user->email, $mailData);
                 // PHPMailerService::send($user->email, $mailData);
-                // Mail::to($user->email)->send(new RegistrationMail($mailData));
+                Mail::to($user->email)->send(new RegistrationMail($mailData));
             } catch (\Throwable $th) {
                 // Log the error for debugging
             }

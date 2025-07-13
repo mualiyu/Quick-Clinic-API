@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\RegistrationMail;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\User;
 use App\Services\MukeeyMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use PhpParser\Comment\Doc;
 
@@ -212,7 +214,7 @@ class AdminController extends Controller
                 try {
                     MukeeyMailService::send($user->email, $mailData);
                     // PHPMailerService::send($user->email, $mailData);
-                    // Mail::to($user->email)->send(new RegistrationMail($mailData));
+                    Mail::to($user->email)->send(new RegistrationMail($mailData));
                 } catch (\Throwable $th) {
                     // Log the error for debugging
                 }
